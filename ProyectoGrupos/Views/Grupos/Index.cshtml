@@ -24,6 +24,7 @@
                                         <th>Descripción</th>
                                         <th>Integrantes</th>
                                         <th>Fecha Creación</th>
+                                        <th>Estado</th>
                                         <th>Acciones</th>
                                     </tr>
                                 </thead>
@@ -38,6 +39,15 @@
                                             </td>
                                             <td>@group.FechaCreacion.ToString("dd/MM/yyyy")</td>
                                             <td>
+                                                @if (group.Estado == "Activo")
+                                                {
+                                                    <span class="badge bg-success">@group.Estado</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-danger">@group.Estado</span>
+                                                }
+                                            <td>
                                                 <div class="btn-group" role="group">
                                                     <a asp-action="Manage" asp-route-id="@group.IdGrupo" class="btn btn-sm btn-info">
                                                         <i class="fas fa-cog"></i> Administrar
@@ -45,7 +55,9 @@
                                                     <a asp-controller="Calendario" asp-action="Index" asp-route-grupoId="@group.IdGrupo" class="btn btn-sm btn-warning">
                                                         <i class="fas fa-cog"></i> Ver Actividades
                                                     </a>
-
+                                                    <a asp-controller="Actividades" asp-action="Index" asp-route-grupoId="@group.IdGrupo" class="btn btn-sm btn-secondary">
+                                                        <i class="fas fa-cog"></i> Crear Actividad
+                                                    </a>
 
                                                 </div>
                                             </td>

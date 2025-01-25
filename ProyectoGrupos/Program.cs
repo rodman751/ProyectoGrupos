@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
+using ProyectoGrupos.Servicios;
 namespace ProyectoGrupos
 {
     public class Program
@@ -12,6 +13,7 @@ namespace ProyectoGrupos
 
             // Add services to the container.
             builder.Services.AddControllersWithViews();
+            builder.Services.AddHostedService<GrupoInactivoTestService>();
 
             //login y cookies
             builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)

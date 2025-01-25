@@ -6,10 +6,10 @@
             <h3>Calendario de @Model.GrupoNombre</h3>
             @if (ViewBag.EsAdministrador)
             {
-                <!-- Botón para abrir el modal de detalles del evento -->
-                <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#eventDetailsModal">
-                    Ver Detalles del Evento
-                </button>
+                <a asp-controller="Actividades" asp-action="Index" asp-route-grupoId="@Model.GrupoId" class="btn btn-sm btn-secondary">
+                    <i class="fas fa-cog"></i> Crear Actividad
+                </a>
+
 
             }
         </div>
@@ -21,45 +21,6 @@
     </div>
 </div>
 
-<!-- Modal para Crear Evento -->
-<div class="modal fade" id="createEventModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Crear Nuevo Evento</h5>
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-            </div>
-            <form id="eventForm">
-                <div class="modal-body">
-                    <div class="form-group">
-                        <label>Título</label>
-                        <input type="text" class="form-control" id="eventTitle" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Descripción</label>
-                        <textarea class="form-control" id="eventDescription"></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label>Fecha</label>
-                        <input type="date" class="form-control" id="eventDate" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Color</label>
-                        <select class="form-control" id="eventColor">
-                            <option value="#007bff">Azul</option>
-                            <option value="#28a745">Verde</option>
-                            <option value="#dc3545">Rojo</option>
-                            <option value="#ffc107">Amarillo</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="submit" class="btn btn-primary">Guardar Evento</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
 
 <!-- Modal para Detalles del Evento -->
 <div class="modal fade" id="eventDetailsModal" tabindex="-1" aria-labelledby="eventDetailsModalLabel" aria-hidden="true">
@@ -73,6 +34,16 @@
                 <p><strong>Descripción:</strong> <span id="eventDetailsDescription"></span></p>
                 <p><strong>Fecha:</strong> <span id="eventDetailsDate"></span></p>
             </div>
+            <div class="modal-footer">
+                <!-- Botones de edición y eliminación dinámicamente generados -->
+                <a id="editEventButton" class="btn btn-sm btn-secondary" href="#">
+                    <i class="fas fa-cog"></i> Editar Actividad
+                </a>
+                <a id="deleteEventButton" class="btn btn-sm btn-danger" href="#">
+                    <i class="fas fa-trash-alt"></i> Eliminar Actividad
+                </a>
+            </div>
+
         </div>
     </div>
 </div>
@@ -101,6 +72,8 @@
                 if (eventEndDate < currentDate) {
                     event.color = '#d9534f'; // Color rojo para eventos pasados
                 }
+
+
             });
             console.log(events);
             const container = document.getElementById('calendar');
@@ -147,6 +120,14 @@
                     $('#eventDetailsCreationDate').text(`Fecha de creación: ${ecuadorCreationTime.toLocaleString()} (Hora Ecuador)`);
                 }
 
+                // Establecer las URLs para los botones de editar y eliminar
+                const editUrl = `/Actividades/Edit?id=${eventInfo.event.id}`;
+                const deleteUrl = `/Actividades/Delete?idActividad=${eventInfo.event.id}`;
+
+                // Asignar las URLs a los botones
+                $('#editEventButton').attr('href', editUrl);
+                $('#deleteEventButton').attr('href', deleteUrl);
+
                 // Show the modal with the updated details
                 $('#eventDetailsModal').modal('show');
             });
@@ -161,27 +142,7 @@
                 calendar.next();  // Cambia al mes siguiente
             });
 
-            // Event Creation Handling
-            // $('#eventForm').on('submit', function (e) {
-            //     e.preventDefault();
-            //     $.ajax({
-            //         url: '@Url.Action("CreateEvent", "Grupos")',
-            //         type: 'POST',
-            //         data: {
-            //             grupoId: @Model.GrupoId,
-            //             titulo: $('#eventTitle').val(),
-            //             descripcion: $('#eventDescription').val(),
-            //             fecha: $('#eventDate').val(),
-            //             color: $('#eventColor').val()
-            //         },
-            //         success: function (result) {
-            //             location.reload();
-            //         },
-            //         error: function () {
-            //             alert('Error al crear el evento');
-            //         }
-            //     });
-            // });
+       
 
 
 

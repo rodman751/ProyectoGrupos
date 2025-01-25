@@ -27,7 +27,8 @@ namespace ProyectoGrupos.Controllers
                     Descripcion = g.Descripcion,
                     NumeroMaximoIntegrantes = g.NumeroMaximoIntegrantes,
                     NumeroActualIntegrantes = g.NumeroActualIntegrantes,
-                    FechaCreacion = g.FechaCreacion
+                    FechaCreacion = g.FechaCreacion,
+                    Estado = g.Estado
                 })
                 .ToListAsync();
 

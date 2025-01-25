@@ -15,12 +15,12 @@ namespace Entidades
 
         public DateTime FechaActividad { get; set; }
 
-        public int CreadoPor { get; set; }
+        public int? CreadoPor { get; set; }
 
         public DateTime FechaCreacion { get; set; }
 
         // Relación con Grupo
 
-        public Grupo Grupo { get; set; }
+        public Grupo? Grupo { get; set; }
     }
 }
