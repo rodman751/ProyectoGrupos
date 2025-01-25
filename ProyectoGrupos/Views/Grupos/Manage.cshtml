@@ -1,0 +1,126 @@
+﻿@model GroupManagementViewModel
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h3 class="mb-0">Administración de Grupo: @Model.Group.Nombre</h3>
+                    <button type="button" class="btn btn-light" data-bs-toggle="modal" data-bs-target="#addMemberModal">
+                        <i class="fas fa-user-plus"></i> Añadir Integrante
+                    </button>
+
+
+                </div>
+                <a href="@Url.Action("Index", "Grupos")" class="btn btn-secondary">
+                    Regresar al Índice
+                </a>
+
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <strong>Descripción:</strong> @Model.Group.Descripcion
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Límite de Integrantes:</strong> @Model.Group.NumeroMaximoIntegrantes
+                        </div>
+                    </div>
+
+                    <h4 class="mb-3">Integrantes del Grupo</h4>
+                    @if (Model.GroupMembers.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Nombre</th>
+                                        <th>Email</th>
+                                        <th>Rol en Grupo</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var member in Model.GroupMembers)
+                                    {
+                                        <tr>
+                                            <td>@member.Nombre</td>
+                                            <td>@member.Email</td>
+                                            <td>
+                                                @(member.EsAdministrador ? "Administrador" : "Miembro")
+                                            </td>
+                                            <td>
+                                                @if (!member.EsAdministrador)
+                                                {
+
+                                                    <form method="post" asp-action="ChangeAdmin" class="d-inline">
+                                                        <input type="hidden" name="grupoId" value="@Model.Group.IdGrupo" />
+                                                        <input type="hidden" name="userId" value="@member.IdUsuario" />
+
+                                                        <button type="submit" class="btn btn-sm btn-warning">
+                                                            Hacer Administrador
+                                                        </button>
+                                                    </form>
+                                                }
+                                                <form method="post" asp-action="RemoveMember" class="d-inline">
+                                                    <input type="hidden" name="grupoId" value="@Model.Group.IdGrupo" />
+                                                    <input type="hidden" name="userId" value="@member.IdUsuario" />
+
+                                                    <button type="submit" class="btn btn-sm btn-danger">
+                                                        Eliminar
+                                                    </button>
+                                                </form>
+
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+
+                            <form method="post" asp-action="EliminarGrupo" class="d-inline">
+                                <input type="hidden" name="id" value="@Model.Group.IdGrupo" />
+                                
+
+                                <button type="submit" class="btn btn-sm btn-danger">
+                                    Eliminar GRUPO
+                                </button>
+                            </form>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info text-center">
+                            No hay integrantes en este grupo aún.
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Modal para Añadir Integrante -->
+<div class="modal fade" id="addMemberModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Añadir Integrante</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addMemberForm" asp-action="AddMember" method="post">
+                    <!-- Campo oculto para enviar el IdGrupo -->
+                    <input type="hidden" name="grupoId" value="@Model.Group.IdGrupo" />
+
+                    <div class="form-group">
+                        <label for="memberEmail">Correo Electrónico</label>
+                        <input type="email" class="form-control" id="memberEmail" name="email" required />
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Añadir</button>
+                </form>
+
+            </div>
+        </div>
+    </div>
+</div>

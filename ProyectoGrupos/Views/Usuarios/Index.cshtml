@@ -1,0 +1,22 @@
+﻿@model IEnumerable<Entidades.Usuario>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Id</th>
+            <th>Nombre</th>
+            <th>Email</th>
+            <th>Rol</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var usuario in Model)
+        {
+            <tr>
+                <td>@usuario.IdUsuario</td>
+                <td>@usuario.Nombre</td>
+                <td>@usuario.Email</td>
+                <td>@usuario.Rol</td>
+            </tr>
+        }
+    </tbody>
+</table>

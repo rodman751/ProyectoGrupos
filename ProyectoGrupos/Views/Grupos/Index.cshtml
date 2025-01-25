@@ -1,0 +1,120 @@
+﻿@model List<GrupoDTO>
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <h2 class="mb-4">Grupos Disponibles</h2>
+
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="card-title mb-0">Lista de Grupos</h3>
+                    <!-- Botón para abrir el modal -->
+                    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#createGroupModal">
+                        <i class="fas fa-plus"></i> Crear Nuevo Grupo
+                    </button>
+                </div>
+                <div class="card-body">
+                    @if (Model.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead class="thead-dark">
+                                    <tr>
+                                        <th>Nombre</th>
+                                        <th>Descripción</th>
+                                        <th>Integrantes</th>
+                                        <th>Fecha Creación</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var group in Model)
+                                    {
+                                        <tr>
+                                            <td>@group.Nombre</td>
+                                            <td>@group.Descripcion</td>
+                                            <td>
+                                                @group.NumeroActualIntegrantes / @group.NumeroMaximoIntegrantes
+                                            </td>
+                                            <td>@group.FechaCreacion.ToString("dd/MM/yyyy")</td>
+                                            <td>
+                                                <div class="btn-group" role="group">
+                                                    <a asp-action="Manage" asp-route-id="@group.IdGrupo" class="btn btn-sm btn-info">
+                                                        <i class="fas fa-cog"></i> Administrar
+                                                    </a>
+                                                    <a asp-controller="Calendario" asp-action="Index" asp-route-grupoId="@group.IdGrupo" class="btn btn-sm btn-warning">
+                                                        <i class="fas fa-cog"></i> Ver Actividades
+                                                    </a>
+
+
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info text-center">
+                            No hay grupos disponibles. ¡Crea tu primer grupo!
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<!-- Modal para Crear Nuevo Grupo -->
+<div class="modal fade" id="createGroupModal" tabindex="-1" aria-labelledby="createGroupModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createGroupModalLabel">Crear Nuevo Grupo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <form id="createGroupForm" asp-action="CrearGrupo" method="post">
+                    <!-- Nombre del Grupo -->
+                    <div class="mb-3">
+                        <label for="Nombre" class="form-label">Nombre del Grupo</label>
+                        <input type="text" class="form-control" id="Nombre" name="Nombre" required>
+                    </div>
+
+                    <!-- Descripción del Grupo -->
+                    <div class="mb-3">
+                        <label for="Descripcion" class="form-label">Descripción</label>
+                        <textarea class="form-control" id="Descripcion" name="Descripcion" rows="3" required></textarea>
+                    </div>
+
+                    <!-- Número Máximo de Integrantes -->
+                    <div class="mb-3">
+                        <label for="NumeroMaximoIntegrantes" class="form-label">Número Máximo de Integrantes</label>
+                        <input type="number" class="form-control" id="NumeroMaximoIntegrantes" name="NumeroMaximoIntegrantes" required>
+                    </div>
+
+                    <!-- Fecha de Creación (por defecto será la fecha actual, pero se puede cambiar) -->
+                    <div class="mb-3">
+                        <label for="FechaCreacion" class="form-label">Fecha de Creación</label>
+                        <input type="datetime-local" class="form-control" id="FechaCreacion" name="FechaCreacion" value="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")" required>
+                    </div>
+
+                    <!-- Botón para crear el grupo -->
+                    <button type="submit" class="btn btn-primary">Crear Grupo</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+
+
+

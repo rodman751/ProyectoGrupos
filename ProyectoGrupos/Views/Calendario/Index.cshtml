@@ -1,0 +1,190 @@
+﻿@model CalendarViewModel
+
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h3>Calendario de @Model.GrupoNombre</h3>
+            @if (ViewBag.EsAdministrador)
+            {
+                <!-- Botón para abrir el modal de detalles del evento -->
+                <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#eventDetailsModal">
+                    Ver Detalles del Evento
+                </button>
+
+            }
+        </div>
+        <button id="prevMonthBtn">Mes Anterior</button>
+        <button id="nextMonthBtn">Mes Siguiente</button>
+        <div class="card-body">
+            <div id="calendar" style="height: 600px;"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Crear Evento -->
+<div class="modal fade" id="createEventModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Crear Nuevo Evento</h5>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <form id="eventForm">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Título</label>
+                        <input type="text" class="form-control" id="eventTitle" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Descripción</label>
+                        <textarea class="form-control" id="eventDescription"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Fecha</label>
+                        <input type="date" class="form-control" id="eventDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Color</label>
+                        <select class="form-control" id="eventColor">
+                            <option value="#007bff">Azul</option>
+                            <option value="#28a745">Verde</option>
+                            <option value="#dc3545">Rojo</option>
+                            <option value="#ffc107">Amarillo</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Guardar Evento</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Detalles del Evento -->
+<div class="modal fade" id="eventDetailsModal" tabindex="-1" aria-labelledby="eventDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="eventDetailsTitle"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong>Descripción:</strong> <span id="eventDetailsDescription"></span></p>
+                <p><strong>Fecha:</strong> <span id="eventDetailsDate"></span></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@section Scripts {
+    <link rel="stylesheet" href="https://uicdn.toast.com/calendar/latest/toastui-calendar.min.css">
+    <script src="https://uicdn.toast.com/calendar/latest/toastui-calendar.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const events = @Html.Raw(Json.Serialize(Model.Eventos.Select(e => new
+            {
+                id = e.IdActividad.ToString(),
+                title = e.Titulo,
+                start = e.FechaCreacion,
+                end= e.FechaActividad,
+                color = e.Color,
+                raw = e.Descripcion
+            })));
+            // Cambiar color si el evento ha pasado
+            events.forEach(event => {
+                const eventEndDate = new Date(event.end);
+                const currentDate = new Date();
+
+                // Si el evento ha pasado, cambiar el color
+                if (eventEndDate < currentDate) {
+                    event.color = '#d9534f'; // Color rojo para eventos pasados
+                }
+            });
+            console.log(events);
+            const container = document.getElementById('calendar');
+            const options = {
+                defaultView: 'month',
+                useCreationPopup: false,
+                useDetailPopup: false,
+                taskView: false,
+                timezone: {
+                    zones: [
+                        {
+                            timezoneName: 'America/Guayaquil', // Time zone for Ecuador
+                            displayLabel: 'Ecuador Time'
+                        }
+                    ]
+                }
+               
+            };
+
+            const calendar = new tui.Calendar(container, options);
+            calendar.createEvents(events);
+
+            calendar.on('clickEvent', function (eventInfo) {
+                // Access the description directly from the event object, not from `raw`
+                const description = eventInfo.event.raw || 'Sin descripción';
+
+                // Convert UTC start date to Ecuador Time (America/Guayaquil)
+                const eventStartDate = new Date(eventInfo.event.start);
+                const eventEndDate = new Date(eventInfo.event.end);
+
+                const ecuadorStartTime = new Date(eventStartDate.toLocaleString('en-US', { timeZone: 'America/Guayaquil' }));
+                const ecuadorEndTime = new Date(eventEndDate.toLocaleString('en-US', { timeZone: 'America/Guayaquil' }));
+
+                // Display event details in the modal
+                $('#eventDetailsTitle').text(eventInfo.event.title);
+                $('#eventDetailsDescription').text(description);
+                $('#eventDetailsDate').text(`Fecha de inicio: ${ecuadorStartTime.toLocaleString()} (Hora Ecuador)`);
+                $('#eventDetailsEndDate').text(`Fecha de fin: ${ecuadorEndTime.toLocaleString()} (Hora Ecuador)`);
+
+                // Optionally, if you have a creation date (FechaCreacion), you can add it here
+                const creationDate = eventInfo.event.raw ? new Date(eventInfo.event.raw.creationDate) : null;
+                if (creationDate) {
+                    const ecuadorCreationTime = new Date(creationDate.toLocaleString('en-US', { timeZone: 'America/Guayaquil' }));
+                    $('#eventDetailsCreationDate').text(`Fecha de creación: ${ecuadorCreationTime.toLocaleString()} (Hora Ecuador)`);
+                }
+
+                // Show the modal with the updated details
+                $('#eventDetailsModal').modal('show');
+            });
+
+
+            // Manejadores para cambiar al mes anterior o siguiente
+            document.getElementById('prevMonthBtn').addEventListener('click', function () {
+                calendar.prev();  // Cambia al mes anterior
+            });
+
+            document.getElementById('nextMonthBtn').addEventListener('click', function () {
+                calendar.next();  // Cambia al mes siguiente
+            });
+
+            // Event Creation Handling
+            // $('#eventForm').on('submit', function (e) {
+            //     e.preventDefault();
+            //     $.ajax({
+            //         url: '@Url.Action("CreateEvent", "Grupos")',
+            //         type: 'POST',
+            //         data: {
+            //             grupoId: @Model.GrupoId,
+            //             titulo: $('#eventTitle').val(),
+            //             descripcion: $('#eventDescription').val(),
+            //             fecha: $('#eventDate').val(),
+            //             color: $('#eventColor').val()
+            //         },
+            //         success: function (result) {
+            //             location.reload();
+            //         },
+            //         error: function () {
+            //             alert('Error al crear el evento');
+            //         }
+            //     });
+            // });
+
+
+
+        });
+    </script>
+}
