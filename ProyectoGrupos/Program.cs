@@ -17,6 +17,7 @@ namespace ProyectoGrupos
             builder.Services.AddControllersWithViews();
             builder.Services.AddHostedService<GrupoInactivoTestService>();
             builder.Services.AddNotyf(config => { config.DurationInSeconds = 10; config.IsDismissable = true; config.Position = NotyfPosition.BottomRight; });
+            builder.Services.AddTransient<IEmailService, EmailService>();
             //login y cookies
             builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
              .AddCookie(config =>
