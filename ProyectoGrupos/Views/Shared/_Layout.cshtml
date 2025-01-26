@@ -23,6 +23,10 @@
 </head>
 <body>
     <div id="wrapper">
+        <!-- Spinner de Carga -->
+        <div id="loadingSpinner" class="spinner-overlay" style="display:none;">
+            <div class="spinner"></div>
+        </div>
         <!-- Barra Lateral -->
         <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
 
@@ -154,6 +158,34 @@
                     // Enviar el formulario de cierre de sesión
                     document.getElementById('logoutForm').submit();
                 }
+            });
+        });
+        // Muestra el spinner
+        function showSpinner() {
+            document.getElementById("loadingSpinner").style.display = "flex";
+        }
+
+        // Oculta el spinner
+        function hideSpinner() {
+            document.getElementById("loadingSpinner").style.display = "none";
+        }
+
+        // Mostrar spinner al enviar formularios
+        document.querySelectorAll("form").forEach(function (form) {
+            form.addEventListener("submit", function (e) {
+                showSpinner();  // Muestra el spinner al enviar el formulario
+                form.querySelector("button[type=submit]").disabled = true; // Opcional: Desactivar el botón para evitar múltiples envíos
+            });
+        });
+
+        // Mostrar spinner en enlaces con Ajax
+        document.querySelectorAll("a").forEach(function (link) {
+            link.addEventListener("click", function (e) {
+                if (this.href && this.href.includes("#")) {
+                    // Evitar spinner para enlaces internos
+                    return;
+                }
+                showSpinner();  // Muestra el spinner si el enlace no es un ancla
             });
         });
     </script>
