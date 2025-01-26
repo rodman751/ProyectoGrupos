@@ -49,15 +49,34 @@
                                 </td>
                                 <td>
                                     <div class="btn-group btn-group-sm">
-                                        <a asp-action="Manage" asp-route-id="@group.IdGrupo" class="btn btn-info">
-                                            <i class="fas fa-cog"></i> Gestionar
-                                        </a>
+                                        <!-- Botón "Gestionar" (solo visible si el usuario es el creador o administrador) -->
+                                        @if ((group.EsCreador ?? false) || (group.EsAdministrador ?? false))
+                                        {
+                                            <a asp-action="Manage" asp-route-id="@group.IdGrupo" class="btn btn-info">
+                                                <i class="fas fa-cog"></i> Gestionar
+                                            </a>
+                                        }
+                                        <!-- Botón "Gestionar" (solo visible si el usuario es el creador o administrador) -->
+                                        @if ((group.EsAdministrador ==false && group.EsCreador == false))
+                                        {
+                                            <a asp-action="Manage" asp-route-id="@group.IdGrupo" class="btn btn-info">
+                                                <i class="fas fa-cog"></i> Detalles
+                                            </a>
+                                        }
+                                        <!-- Botón "Calendario" (siempre visible) -->
                                         <a asp-controller="Calendario" asp-action="Index" asp-route-grupoId="@group.IdGrupo" class="btn btn-warning">
                                             <i class="fas fa-calendar-alt"></i> Calendario
                                         </a>
-                                        <a asp-controller="Actividades" asp-action="Index" asp-route-grupoId="@group.IdGrupo" class="btn btn-secondary">
-                                            <i class="fas fa-tasks"></i> Crear Actividad
-                                        </a>
+
+                                        <!-- Botón "Crear Actividad" (solo visible si el usuario es el creador o administrador) -->
+                                        @if ((group.EsCreador ?? false) || (group.EsAdministrador ?? false))
+                                        {
+                                            <a asp-controller="Actividades" asp-action="Index" asp-route-grupoId="@group.IdGrupo" class="btn btn-secondary">
+                                                <i class="fas fa-tasks"></i> Crear Actividad
+                                            </a>
+                                        }
+
+                                       
                                     </div>
                                 </td>
                             </tr>

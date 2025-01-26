@@ -1,20 +1,22 @@
-﻿using Entidades;
+﻿using AspNetCoreHero.ToastNotification.Abstractions;
+using Entidades;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ProyectoGrupos.Models;
 
 namespace ProyectoGrupos.Controllers
 {
-    //[Authorize]
+    [Authorize]
     public class GruposController : Controller
     {
         private readonly DbContext _context;
+        public INotyfService _notifyService { get; }
 
-
-        public GruposController(DbContext context)
+        public GruposController(DbContext context, INotyfService notifyService)
         {
             _context = context;
-
+            _notifyService = notifyService;
         }
 
         private async Task<int> GetUserId()
@@ -42,21 +44,28 @@ namespace ProyectoGrupos.Controllers
         public async Task<IActionResult> Index()
         {
             var userId = await GetUserId();
+
+            // Lista de grupos con información sobre si el usuario es creador o administrador
             var grupos = await _context.Grupos
-           .Where(g => g.IdCreador == userId || g.GruposIntegrantes.Any(gi => gi.IdUsuario == userId))
-           .Select(g => new GrupoDTO
-           {
-               IdGrupo = g.IdGrupo,
-               Nombre = g.Nombre,
-               Descripcion = g.Descripcion,
-               NumeroMaximoIntegrantes = g.NumeroMaximoIntegrantes,
-               NumeroActualIntegrantes = g.NumeroActualIntegrantes,
-               FechaCreacion = g.FechaCreacion,
-               Estado = g.Estado
-           })
-           .ToListAsync();
+                .Where(g => g.IdCreador == userId || g.GruposIntegrantes.Any(gi => gi.IdUsuario == userId))
+                .Select(g => new GrupoDTO
+                {
+                    IdGrupo = g.IdGrupo,
+                    Nombre = g.Nombre,
+                    Descripcion = g.Descripcion,
+                    NumeroMaximoIntegrantes = g.NumeroMaximoIntegrantes,
+                    NumeroActualIntegrantes = g.NumeroActualIntegrantes,
+                    FechaCreacion = g.FechaCreacion,
+                    Estado = g.Estado,
+                    EsCreador = g.IdCreador == userId, // Verifica si el usuario es el creador del grupo
+                    EsAdministrador = g.GruposIntegrantes.Any(gi => gi.IdUsuario == userId && gi.AdministrarGrupo) // Verifica si es administrador
+                })
+                .ToListAsync();
+
+            // Pasar la lista de grupos al modelo de la vista
             return View(grupos);
         }
+
 
         public async Task<IActionResult> Manage(int id)
         {
@@ -67,7 +76,19 @@ namespace ProyectoGrupos.Controllers
 
             if (grupo == null)
                 return NotFound();
-
+            bool esCreador = grupo.IdCreador == await GetUserId();
+            var userid = await GetUserId();
+            bool esAdministrador = grupo.GruposIntegrantes.Any(gi => gi.IdUsuario == userid && gi.AdministrarGrupo);
+            if (esCreador)
+            {
+                ViewBag.EsCreador = true;
+            }
+            else { esCreador = false; }
+            if (esAdministrador)
+            {
+                ViewBag.EsAdministrador = true;
+            }
+            else { esAdministrador = false; }
             var viewModel = new GroupManagementViewModel
             {
                 Group = grupo,
@@ -91,14 +112,23 @@ namespace ProyectoGrupos.Controllers
                 return NotFound("Grupo no encontrado");
 
             if (Grupo.NumeroActualIntegrantes >= Grupo.NumeroMaximoIntegrantes)
-                return BadRequest("El grupo ya tiene el número máximo de integrantes");
+            {
+                _notifyService.Information("El grupo ya tiene el número máximo de integrantes");
+                return RedirectToAction("Manage", new { id = grupoId });
+            }
 
             var usuario = await _context.Usuarios.FirstOrDefaultAsync(u => u.Email == email);
             if (usuario == null)
-                return NotFound("Usuario no encontrado");
+            {
+                _notifyService.Information("Usuario no encontrado");
+                return RedirectToAction("Manage", new { id = grupoId });
+            }
 
             if (await _context.GruposIntegrantes.AnyAsync(gi => gi.IdGrupo == grupoId && gi.IdUsuario == usuario.IdUsuario))
-                return BadRequest("El usuario ya es miembro del grupo");
+            {
+                _notifyService.Information("El usuario ya es miembro del grupo");
+                return RedirectToAction("Manage", new { id = grupoId });
+            }
             var grupoIntegrante = new Entidades.GrupoIntegrante
             {
                 IdGrupo = grupoId,
@@ -109,7 +139,7 @@ namespace ProyectoGrupos.Controllers
             _context.Grupos.Update(Grupo);
             _context.GruposIntegrantes.Add(grupoIntegrante);
             await _context.SaveChangesAsync();
-
+            _notifyService.Success("Usuario agregado correctamente");
             return RedirectToAction("Manage", new { id = grupoId });
         }
 
@@ -130,7 +160,7 @@ namespace ProyectoGrupos.Controllers
             _context.Grupos.Update(Grupo);
             _context.GruposIntegrantes.Remove(grupoIntegrante);
             await _context.SaveChangesAsync();
-
+            _notifyService.Success("Usuario eliminado correctamente");
             return RedirectToAction("Manage", new { id = grupoId });
         }
         [HttpPost]
@@ -143,9 +173,11 @@ namespace ProyectoGrupos.Controllers
                 return NotFound("Integrante no encontrado");
 
             grupoIntegrante.AdministrarGrupo = true;
+            var usuario = await _context.Usuarios.FirstOrDefaultAsync(u => u.IdUsuario == userId);
+            usuario.Rol = "Colaborador";
             _context.GruposIntegrantes.Update(grupoIntegrante);
             await _context.SaveChangesAsync();
-
+            _notifyService.Success("Usuario ahora es administrador");
             return RedirectToAction("Manage", new { id = grupoId });
         }
 
@@ -185,11 +217,13 @@ namespace ProyectoGrupos.Controllers
             };
 
 
+            usuario.Rol = "Colaborador";
             _context.GruposIntegrantes.Add(grupoIntegrante);
+            _context.Usuarios.Update(usuario);
             nuevoGrupo.NumeroActualIntegrantes++;
 
             await _context.SaveChangesAsync();
-
+            _notifyService.Success("Grupo creado correctamente");
             // Redirigir a la vista de index después de guardar todo
             return RedirectToAction("Index");
         }
@@ -214,7 +248,7 @@ namespace ProyectoGrupos.Controllers
 
             await _context.SaveChangesAsync();
 
-
+            _notifyService.Success("Grupo eliminado correctamente");
             return RedirectToAction("Index");
         }
 

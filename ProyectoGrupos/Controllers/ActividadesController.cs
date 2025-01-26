@@ -1,4 +1,5 @@
-﻿using Entidades;
+﻿using AspNetCoreHero.ToastNotification.Abstractions;
+using Entidades;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,9 +8,12 @@ namespace ProyectoGrupos.Controllers
     public class ActividadesController : Controller
     {
         private readonly DbContext _context;
-        public ActividadesController(DbContext context)
+        public INotyfService _notifyService { get; }
+
+        public ActividadesController(DbContext context, INotyfService notifyService)
         {
             _context = context;
+            _notifyService = notifyService;
         }
         private async Task<int> GetUserId()
         {
@@ -49,10 +53,12 @@ namespace ProyectoGrupos.Controllers
                 actividad.CreadoPor = usuario.Result;
                 _context.Actividades.Add(actividad);
                 _context.SaveChanges();
-                return RedirectToAction("Index", "Calendario", new { grupoId = actividad.IdGrupo });
+                _notifyService.Success("Actividad creada correctamente");
 
+                return RedirectToAction("Index", "Calendario", new { grupoId = actividad.IdGrupo });
             }
             ViewBag.IdGrupo = actividad.IdGrupo;
+            _notifyService.Error("Error al crear la actividad");
             return View(actividad);
         }
 
@@ -75,10 +81,10 @@ namespace ProyectoGrupos.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult Edit(int id, Actividad actividad)
         {
-            if (id != actividad.IdActividad)
-            {
-                return NotFound();
-            }
+            //if (id != actividad.IdActividad)
+            //{
+            //    return NotFound();
+            //}
 
             if (ModelState.IsValid)
             {
@@ -87,9 +93,11 @@ namespace ProyectoGrupos.Controllers
                 _context.Actividades.Update(actividad);
 
                 _context.SaveChanges();
+                _notifyService.Success("Actividad actualizada correctamente");
                 return RedirectToAction("Index", "Calendario", new { grupoId = actividad.IdGrupo });
 
             }
+            _notifyService.Error("Error al actualizar la actividad");
             return View(actividad);
         }
 
@@ -102,6 +110,7 @@ namespace ProyectoGrupos.Controllers
             }
             _context.Actividades.Remove(actividad);
             _context.SaveChanges();
+            _notifyService.Success("Actividad eliminada correctamente");
             return RedirectToAction("Index", "Calendario", new { grupoId = actividad.IdGrupo });
         }
 

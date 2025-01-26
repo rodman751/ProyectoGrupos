@@ -38,14 +38,17 @@
                     <p><strong>Fecha de Inicio:</strong> <span id="eventDetailsDate"></span></p>
                     <p><strong>Fecha de Fin:</strong> <span id="eventDetailsEndDate"></span></p>
                 </div>
-                <div class="modal-footer">
-                    <a id="editEventButton" class="btn btn-sm btn-warning">
-                        <i class="fas fa-edit me-2"></i>Editar
-                    </a>
-                    <a id="deleteEventButton" class="btn btn-sm btn-danger">
-                        <i class="fas fa-trash-alt me-2"></i>Eliminar
-                    </a>
-                </div>
+                @if(User.IsInRole("Colaborador")){
+                    <div class="modal-footer">
+                        <a id="editEventButton" class="btn btn-sm btn-warning">
+                            <i class="fas fa-edit me-2"></i>Editar
+                        </a>
+                        <a id="deleteEventButton" class="btn btn-sm btn-danger">
+                            <i class="fas fa-trash-alt me-2"></i>Eliminar
+                        </a>
+                    </div>
+                }
+                            
             </div>
         </div>
     </div>
