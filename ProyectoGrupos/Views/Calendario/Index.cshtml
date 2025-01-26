@@ -6,7 +6,7 @@
                 <h3 class="mb-0">Calendario de @Model.GrupoNombre</h3>
                
             </div>
-        @if (ViewBag.EsAdministrador)
+        @if (ViewBag.EsAdministrador || User.IsInRole("Colaborador") || User.IsInRole("Admin"))
         {
             <a asp-controller="Actividades" asp-action="Index" asp-route-grupoId="@Model.GrupoId" class="btn btn-outline-primary m-2">
                 <i class="fas fa-plus-circle me-2"></i>Crear Actividad
