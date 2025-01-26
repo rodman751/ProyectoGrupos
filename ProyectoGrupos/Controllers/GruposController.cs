@@ -373,8 +373,15 @@ namespace ProyectoGrupos.Controllers
                 AdministrarGrupo = true
             };
 
+            if (usuario.Rol == "Admin")
+            {
+                usuario.Rol = "Admin";
+            }
+            else
+            {
+                usuario.Rol = "Colaborador";
+            }
 
-            usuario.Rol = "Colaborador";
             _context.GruposIntegrantes.Add(grupoIntegrante);
             _context.Usuarios.Update(usuario);
             nuevoGrupo.NumeroActualIntegrantes++;
@@ -387,8 +394,9 @@ namespace ProyectoGrupos.Controllers
         [HttpPost]
         public async Task<IActionResult> EliminarGrupo(int id)
         {
-            var grupo = await _context.Grupos.Include(g => g.GruposIntegrantes) // Incluimos los integrantes
-                                              .FirstOrDefaultAsync(g => g.IdGrupo == id);
+            var grupo = await _context.Grupos.Include(g => g.GruposIntegrantes)  // Including GruposIntegrantes
+                                     .Include(g => g.Actividades)  // Including Actividades
+                                     .FirstOrDefaultAsync(g => g.IdGrupo == id);
 
             if (grupo == null)
             {
