@@ -1,4 +1,5 @@
-﻿using Entidades;
+﻿using AspNetCoreHero.ToastNotification.Abstractions;
+using Entidades;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
@@ -11,9 +12,11 @@ namespace ProyectoGrupos.Controllers
     public class LoginController : Controller
     {
         private readonly DbContext _context;
-        public LoginController(DbContext context)
+        public INotyfService _notifyService { get; }
+        public LoginController(DbContext context, INotyfService notifyService)
         {
             _context = context;
+            _notifyService = notifyService;
         }
         public ActionResult IniciarSesion()
         {
@@ -55,7 +58,7 @@ namespace ProyectoGrupos.Controllers
                     {
 
                         TempData["Error"] = "Usuario o contraseña incorrectos";
-                        return RedirectToAction("Index");
+                        return RedirectToAction("IniciarSesion", "Login");
                     }
                     var rol = await GetRol(model.Nombre);
                     var claims = new List<Claim>
@@ -65,22 +68,23 @@ namespace ProyectoGrupos.Controllers
                      };
                     var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
                     await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity));
-                    // _notifyService.Success($"Bienvenido {model.Usuario}");
+                    _notifyService.Success($"Bienvenido {model.Nombre}");
                     return RedirectToAction("Index", "Home");
                 }
                 catch (Exception ex)
                 {
+
                     return StatusCode(500, $"Error al autenticar: {ex.Message}");
                 }
             }
-
-            return BadRequest(model);
+            TempData["Error"] = "Erro al Iniciar Secion";
+            return RedirectToAction("IiniciarSesion", "Login");
         }
 
         public async Task<IActionResult> Salir()
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-            return RedirectToAction("Index", "Login");
+            return RedirectToAction("IniciarSesion", "Login");
         }
 
         [HttpPost]
@@ -93,6 +97,7 @@ namespace ProyectoGrupos.Controllers
                 if (model.Contraseña != model.ConfirmarContraseña)
                 {
                     ModelState.AddModelError(string.Empty, "Las contraseñas no coinciden.");
+                    TempData["Error"] = "Las contraseñas no coinciden.";
                     return View(model);
                 }
 
@@ -112,7 +117,7 @@ namespace ProyectoGrupos.Controllers
                 await _context.SaveChangesAsync();
 
 
-                //_notifyService.Success("Usuario creado con éxito");
+                TempData["Bien"] = "Usuario Creado";
                 return RedirectToAction("IniciarSesion");
             }
 

@@ -1,5 +1,8 @@
-﻿using Microsoft.AspNetCore.Authentication.Cookies;
+﻿using AspNetCoreHero.ToastNotification;
+using AspNetCoreHero.ToastNotification.Extensions;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
+using ProyectoGrupos.Servicios;
 namespace ProyectoGrupos
 {
     public class Program
@@ -12,13 +15,15 @@ namespace ProyectoGrupos
 
             // Add services to the container.
             builder.Services.AddControllersWithViews();
-
+            builder.Services.AddHostedService<GrupoInactivoTestService>();
+            builder.Services.AddNotyf(config => { config.DurationInSeconds = 10; config.IsDismissable = true; config.Position = NotyfPosition.BottomRight; });
+            builder.Services.AddTransient<IEmailService, EmailService>();
             //login y cookies
             builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
              .AddCookie(config =>
              {
                  config.Cookie.Name = "Login";
-                 config.LoginPath = "/Login/IniciarSedion";
+                 config.LoginPath = "/Login/IniciarSesion";
                  config.AccessDeniedPath = "/Home/AccesoDenegado";
                  config.ExpireTimeSpan = TimeSpan.FromMinutes(20);
              });
@@ -39,7 +44,7 @@ namespace ProyectoGrupos
             app.UseStaticFiles();
 
             app.UseRouting();
-
+            app.UseNotyf();
             app.UseAuthorization();
 
             app.MapControllerRoute(

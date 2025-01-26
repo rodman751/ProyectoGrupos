@@ -1,0 +1,43 @@
+﻿@model Entidades.Actividad
+
+@{
+    ViewData["Title"] = "Crear Actividad";
+}
+
+<div class="activity-container">
+    <div class="form-header">
+        <h1 class="mb-0">Crear Actividad</h1>
+    </div>
+    <div class="form-body">
+        <form asp-action="Create" asp-controller="Actividades" method="post">
+            <input type="hidden" asp-for="IdGrupo" value="@ViewBag.IdGrupo" />
+
+            <div class="form-group">
+                <label asp-for="Titulo" class="form-label">Título</label>
+                <input asp-for="Titulo" class="form-control" placeholder="Ingrese el título de la actividad" />
+                <span asp-validation-for="Titulo" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Descripcion" class="form-label">Descripción</label>
+                <textarea asp-for="Descripcion" class="form-control" rows="4" placeholder="Describa los detalles de la actividad"></textarea>
+                <span asp-validation-for="Descripcion" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="FechaActividad" class="form-label">Fecha de Actividad</label>
+                <input asp-for="FechaActividad" type="datetime-local" class="form-control" />
+                <span asp-validation-for="FechaActividad" class="text-danger"></span>
+            </div>
+
+            <div class="d-flex justify-content-end">
+                <a asp-action="Index" asp-controller="Grupos" class="btn btn-secondary btn-cancel">
+                    <i class="fas fa-times me-2"></i>Cancelar
+                </a>
+                <button type="submit" class="btn btn-primary btn-submit">
+                    <i class="fas fa-check me-2"></i>Crear
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

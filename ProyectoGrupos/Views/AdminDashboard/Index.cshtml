@@ -1,0 +1,143 @@
+﻿@model DashboardViewModel
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-header">Sistema Overview</div>
+                <div class="card-body">
+                    <h5>Total Usuarios: @Model.TotalUsers</h5>
+                    <h5>Total Grupos: @Model.TotalGroups</h5>
+                    <h5>Total Actividades: @Model.TotalActivities</h5>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-9">
+            <div class="row">
+                <div class="col-md-6">
+                    <canvas id="groupStateChart"></canvas>
+                </div>
+                <div class="col-md-6">
+                    <canvas id="userRoleChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">Actividades Recientes</div>
+                <div class="card-body">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Título</th>
+                                <th>Fecha</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var activity in Model.RecentActivities)
+                            {
+                                <tr>
+                                    <td>@activity.Titulo</td>
+                                    <td>@activity.FechaActividad</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <canvas id="groupMemberChart"></canvas>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            // Group State Chart
+            var groupStateCtx = document.getElementById('groupStateChart').getContext('2d');
+            new Chart(groupStateCtx, {
+                type: 'pie',
+                data: {
+                    labels: @Html.Raw(Json.Serialize(Model.GroupStateDistribution.Select(g => g.Estado))),
+                    datasets: [{
+                        data: @Html.Raw(Json.Serialize(Model.GroupStateDistribution.Select(g => g.Count))),
+                        backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        }
+                    }
+                }
+            });
+
+            // User Role Chart
+            var userRoleCtx = document.getElementById('userRoleChart').getContext('2d');
+            new Chart(userRoleCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: @Html.Raw(Json.Serialize(Model.UserRoleDistribution.Select(u => u.Rol))),
+                    datasets: [{
+                        data: @Html.Raw(Json.Serialize(Model.UserRoleDistribution.Select(u => u.Count))),
+                        backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        }
+                    }
+                }
+            });
+
+            // Group Member Chart
+            var groupMemberCtx = document.getElementById('groupMemberChart').getContext('2d');
+            new Chart(groupMemberCtx, {
+                type: 'bar',
+                data: {
+                    labels: @Html.Raw(Json.Serialize(Model.GroupMemberTrends.Select(g => g.NombreGrupo))),
+                    datasets: [{
+                        label: 'Número de Integrantes',
+                        data: @Html.Raw(Json.Serialize(Model.GroupMemberTrends.Select(g => g.NumeroIntegrantes))),
+                        backgroundColor: '#36A2EB'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Grupos'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Número de Integrantes'
+                            },
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+}

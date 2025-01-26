@@ -1,25 +1,68 @@
-﻿using Entidades;
+﻿using AspNetCoreHero.ToastNotification.Abstractions;
+using Entidades;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ProyectoGrupos.Models;
+using ProyectoGrupos.Servicios;
 
 namespace ProyectoGrupos.Controllers
 {
-    //[Authorize]
+    [Authorize]
     public class GruposController : Controller
     {
         private readonly DbContext _context;
-
-
-        public GruposController(DbContext context)
+        public INotyfService _notifyService { get; }
+        private readonly IEmailService _emailService;
+        public GruposController(DbContext context, INotyfService notifyService, IEmailService emailService)
         {
             _context = context;
-
+            _notifyService = notifyService;
+            _emailService = emailService;
         }
+
+        private async Task<int> GetUserId()
+        {
+            // Obtenemos el nombre de usuario del contexto del usuario autenticado
+            var username = User.Identity.Name;
+
+            if (string.IsNullOrEmpty(username))
+            {
+                throw new InvalidOperationException("El usuario no está autenticado.");
+            }
+
+            // Buscamos el usuario en la base de datos por el nombre de usuario
+            var usuario = await _context.Usuarios
+                .FirstOrDefaultAsync(u => u.Nombre == username);
+
+            if (usuario == null)
+            {
+                throw new InvalidOperationException("El usuario no existe en la base de datos.");
+            }
+
+            // Retornamos el Id del usuario
+            return usuario.IdUsuario;
+        }
+        [HttpGet]
+        public IActionResult ObtenerCorreos(string searchTerm)
+        {
+            var correos = _context.Usuarios
+                .Where(u => string.IsNullOrEmpty(searchTerm) || u.Email.Contains(searchTerm))
+                .Select(u => new { id = u.Email, text = u.Email })
+                .Take(10) // Limitar a 10 resultados
+                .ToList();
+
+            return Json(new { results = correos });
+        }
+
 
         public async Task<IActionResult> Index()
         {
+            var userId = await GetUserId();
+
+            // Lista de grupos con información sobre si el usuario es creador o administrador
             var grupos = await _context.Grupos
+                .Where(g => g.IdCreador == userId || g.GruposIntegrantes.Any(gi => gi.IdUsuario == userId))
                 .Select(g => new GrupoDTO
                 {
                     IdGrupo = g.IdGrupo,
@@ -27,12 +70,17 @@ namespace ProyectoGrupos.Controllers
                     Descripcion = g.Descripcion,
                     NumeroMaximoIntegrantes = g.NumeroMaximoIntegrantes,
                     NumeroActualIntegrantes = g.NumeroActualIntegrantes,
-                    FechaCreacion = g.FechaCreacion
+                    FechaCreacion = g.FechaCreacion,
+                    Estado = g.Estado,
+                    EsCreador = g.IdCreador == userId, // Verifica si el usuario es el creador del grupo
+                    EsAdministrador = g.GruposIntegrantes.Any(gi => gi.IdUsuario == userId && gi.AdministrarGrupo) // Verifica si es administrador
                 })
                 .ToListAsync();
 
+            // Pasar la lista de grupos al modelo de la vista
             return View(grupos);
         }
+
 
         public async Task<IActionResult> Manage(int id)
         {
@@ -43,7 +91,19 @@ namespace ProyectoGrupos.Controllers
 
             if (grupo == null)
                 return NotFound();
-
+            bool esCreador = grupo.IdCreador == await GetUserId();
+            var userid = await GetUserId();
+            bool esAdministrador = grupo.GruposIntegrantes.Any(gi => gi.IdUsuario == userid && gi.AdministrarGrupo);
+            if (esCreador)
+            {
+                ViewBag.EsCreador = true;
+            }
+            else { esCreador = false; }
+            if (esAdministrador)
+            {
+                ViewBag.EsAdministrador = true;
+            }
+            else { esAdministrador = false; }
             var viewModel = new GroupManagementViewModel
             {
                 Group = grupo,
@@ -67,14 +127,23 @@ namespace ProyectoGrupos.Controllers
                 return NotFound("Grupo no encontrado");
 
             if (Grupo.NumeroActualIntegrantes >= Grupo.NumeroMaximoIntegrantes)
-                return BadRequest("El grupo ya tiene el número máximo de integrantes");
+            {
+                _notifyService.Information("El grupo ya tiene el número máximo de integrantes");
+                return RedirectToAction("Manage", new { id = grupoId });
+            }
 
             var usuario = await _context.Usuarios.FirstOrDefaultAsync(u => u.Email == email);
             if (usuario == null)
-                return NotFound("Usuario no encontrado");
+            {
+                _notifyService.Information("Usuario no encontrado");
+                return RedirectToAction("Manage", new { id = grupoId });
+            }
 
             if (await _context.GruposIntegrantes.AnyAsync(gi => gi.IdGrupo == grupoId && gi.IdUsuario == usuario.IdUsuario))
-                return BadRequest("El usuario ya es miembro del grupo");
+            {
+                _notifyService.Information("El usuario ya es miembro del grupo");
+                return RedirectToAction("Manage", new { id = grupoId });
+            }
             var grupoIntegrante = new Entidades.GrupoIntegrante
             {
                 IdGrupo = grupoId,
@@ -86,12 +155,86 @@ namespace ProyectoGrupos.Controllers
             _context.GruposIntegrantes.Add(grupoIntegrante);
             await _context.SaveChangesAsync();
 
+            var emailsent = new EmailModel
+            {
+                To = usuario.Email, // Asegúrate de que este sea un correo electrónico válido
+                Subject = "¡Felicidades, fuiste añadido a un grupo!",
+                Body = $@"
+        <html>
+            <head>
+                <style>
+                    body {{
+                        font-family: Arial, sans-serif;
+                        background-color: #f4f4f9;
+                        color: #333;
+                        margin: 0;
+                        padding: 0;
+                    }}
+                    .container {{
+                        max-width: 600px;
+                        margin: 0 auto;
+                        background-color: #fff;
+                        padding: 20px;
+                        border-radius: 8px;
+                        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+                    }}
+                    h1 {{
+                        color: #4CAF50;
+                        text-align: center;
+                    }}
+                    p {{
+                        font-size: 16px;
+                        line-height: 1.6;
+                    }}
+                    .btn {{
+                        display: inline-block;
+                        padding: 10px 20px;
+                        background-color: #4CAF50;
+                        color: #fff;
+                        text-align: center;
+                        text-decoration: none;
+                        border-radius: 4px;
+                        margin-top: 20px;
+                    }}
+                    .footer {{
+                        text-align: center;
+                        font-size: 12px;
+                        color: #777;
+                        margin-top: 30px;
+                    }}
+                </style>
+            </head>
+            <body>
+                <div class='container'>
+                    <h1>¡Bienvenido al grupo {Grupo.Nombre}!</h1>
+                    <p>Nos complace informarte que fuiste añadido al grupo <strong>{Grupo.Nombre}</strong>. Ahora puedes comenzar a participar en todas las actividades y recibir actualizaciones del grupo.</p>
+                    <p>Si tienes alguna pregunta, no dudes en contactarnos.</p>
+                    
+                    <div class='footer'>
+                        <p>Este correo fue enviado automáticamente. Si no reconoces este mensaje, por favor ignóralo.</p>
+                        <p>&copy; {DateTime.Now.Year} Tu Empresa - Todos los derechos reservados.</p>
+                    </div>
+                </div>
+            </body>
+        </html>
+    ",
+                IsHtml = true
+            };
+
+            await _emailService.SendEmailAsync(emailsent);
+            _notifyService.Success("Usuario agregado correctamente");
             return RedirectToAction("Manage", new { id = grupoId });
         }
 
         [HttpPost]
         public async Task<IActionResult> RemoveMember(int grupoId, int userId)
         {
+            var usuario = await _context.Usuarios.FirstOrDefaultAsync(u => u.IdUsuario == userId);
+            if (usuario == null)
+            {
+                _notifyService.Information("Usuario no encontrado");
+                return RedirectToAction("Manage", new { id = grupoId });
+            }
             var grupoIntegrante = await _context.GruposIntegrantes
                 .FirstOrDefaultAsync(gi => gi.IdGrupo == grupoId && gi.IdUsuario == userId);
 
@@ -106,7 +249,75 @@ namespace ProyectoGrupos.Controllers
             _context.Grupos.Update(Grupo);
             _context.GruposIntegrantes.Remove(grupoIntegrante);
             await _context.SaveChangesAsync();
+            var emailsent = new EmailModel
+            {
+                To = usuario.Email, // Asegúrate de que este sea un correo electrónico válido
+                Subject = "¡Lo sentimos, fuiste eliminado del grupo!",
+                Body = $@"
+<html>
+    <head>
+        <style>
+            body {{
+                font-family: Arial, sans-serif;
+                background-color: #f4f4f9;
+                color: #333;
+                margin: 0;
+                padding: 0;
+            }}
+            .container {{
+                max-width: 600px;
+                margin: 0 auto;
+                background-color: #fff;
+                padding: 20px;
+                border-radius: 8px;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            }}
+            h1 {{
+                color: #e74c3c;
+                text-align: center;
+            }}
+            p {{
+                font-size: 16px;
+                line-height: 1.6;
+            }}
+            .btn {{
+                display: inline-block;
+                padding: 10px 20px;
+                background-color: #e74c3c;
+                color: #fff;
+                text-align: center;
+                text-decoration: none;
+                border-radius: 4px;
+                margin-top: 20px;
+            }}
+            .footer {{
+                text-align: center;
+                font-size: 12px;
+                color: #777;
+                margin-top: 30px;
+            }}
+        </style>
+    </head>
+    <body>
+        <div class='container'>
+            <h1>¡Has sido eliminado del grupo {Grupo.Nombre}!</h1>
+            <p>Sentimos informarte que has sido removido del grupo <strong>{Grupo.Nombre}</strong>. Ya no recibirás más actualizaciones ni podrás participar en las actividades del grupo.</p>
+            <p>Si tienes alguna pregunta o necesitas más información, no dudes en ponerte en contacto con nosotros.</p>
+            
+            <div class='footer'>
+                <p>Este correo fue enviado automáticamente. Si no reconoces este mensaje, por favor ignóralo.</p>
+                <p>&copy; {DateTime.Now.Year} Tu Empresa - Todos los derechos reservados.</p>
+            </div>
+        </div>
+    </body>
+</html>
+",
+                IsHtml = true
+            };
 
+            await _emailService.SendEmailAsync(emailsent);
+
+            _notifyService.Success("Usuario eliminado correctamente");
             return RedirectToAction("Manage", new { id = grupoId });
         }
         [HttpPost]
@@ -119,9 +330,11 @@ namespace ProyectoGrupos.Controllers
                 return NotFound("Integrante no encontrado");
 
             grupoIntegrante.AdministrarGrupo = true;
+            var usuario = await _context.Usuarios.FirstOrDefaultAsync(u => u.IdUsuario == userId);
+            usuario.Rol = "Colaborador";
             _context.GruposIntegrantes.Update(grupoIntegrante);
             await _context.SaveChangesAsync();
-
+            _notifyService.Success("Usuario ahora es administrador");
             return RedirectToAction("Manage", new { id = grupoId });
         }
 
@@ -146,7 +359,8 @@ namespace ProyectoGrupos.Controllers
                 NumeroMaximoIntegrantes = grupo.NumeroMaximoIntegrantes,
                 NumeroActualIntegrantes = 0,
                 IdCreador = usuario.IdUsuario,
-                FechaCreacion = DateTime.Now
+                FechaCreacion = DateTime.Now,
+                Estado = "Activo"
             };
 
             _context.Grupos.Add(nuevoGrupo);
@@ -160,11 +374,13 @@ namespace ProyectoGrupos.Controllers
             };
 
 
+            usuario.Rol = "Colaborador";
             _context.GruposIntegrantes.Add(grupoIntegrante);
+            _context.Usuarios.Update(usuario);
             nuevoGrupo.NumeroActualIntegrantes++;
 
             await _context.SaveChangesAsync();
-
+            _notifyService.Success("Grupo creado correctamente");
             // Redirigir a la vista de index después de guardar todo
             return RedirectToAction("Index");
         }
@@ -189,7 +405,7 @@ namespace ProyectoGrupos.Controllers
 
             await _context.SaveChangesAsync();
 
-
+            _notifyService.Success("Grupo eliminado correctamente");
             return RedirectToAction("Index");
         }
 

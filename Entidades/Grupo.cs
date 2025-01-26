@@ -14,6 +14,7 @@ namespace Entidades
         public int IdCreador { get; set; }
         public DateTime FechaCreacion { get; set; }
         public int NumeroActualIntegrantes { get; set; }
+        public string Estado { get; set; }
 
         // Relación con Actividades
         public ICollection<Actividad> Actividades { get; set; }

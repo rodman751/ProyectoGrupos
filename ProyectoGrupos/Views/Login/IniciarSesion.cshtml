@@ -2,30 +2,101 @@
 
 @{
     ViewData["Title"] = "Iniciar sesión";
+    Layout = null;
+    var errorMessage = TempData["Error"] as string;
+    var bien = TempData["Bien"] as string;
 }
 
-<h2>@ViewData["Title"]</h2>
 
-<form asp-action="IniciarSesion" method="post">
-    <div class="form-group">
-        <label for="Nonbre">Correo Electrónico</label>
-        <input asp-for="Nombre" class="form-control" placeholder="Ingrese su correo" />
-        <span asp-validation-for="Nombre" class="text-danger"></span>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar Sesión</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f4f6f9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden; /* Evitar que aparezca una barra de desplazamiento */
+        }
+
+        .login-container {
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            width: 100%;
+            max-width: 450px;
+
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 12px;
+            background-color: #007bff;
+            border: none;
+            color: white; /* Asegura que el texto del botón sea blanco */
+            font-size: 16px; /* Ajuste del tamaño del texto */
+            border-radius: 6px; /* Bordes redondeados del botón */
+        }
+
+            .btn-login:hover {
+                background-color: #0056b3;
+            }
+
+        .containerper {
+            width: 500px;
+            }
+    </style>
+</head>
+<body>
+    <div class="containerper">
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                @errorMessage
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+        @if (!string.IsNullOrEmpty(bien))
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                @bien
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+        <div class="login-container">
+            <div class="login-header">
+                <h2>@ViewData["Title"]</h2>
+            </div>
+            <form asp-action="IniciarSesion" asp-controller="Login">
+                <div class="mb-3">
+                    <label for="Nombre" class="form-label">Usuario</label>
+                    <input type="text" name="Nombre" class="form-control" id="Nombre" required>
+                </div>
+                <div class="mb-3">
+                    <label for="password" class="form-label">Contraseña</label>
+                    <input type="password" name="Contraseña" class="form-control" id="password" required>
+                </div>
+                <button type="submit" class="btn btn-primary btn-login">Iniciar Sesión</button>
+                <div class="text-center mt-3">
+                    <p class="small">¿No tienes cuenta? <a href="@Url.Action("Register","Login")" class="text-primary">Regístrate aquí</a>.</p>
+                </div>
+            </form>
+        </div>
     </div>
 
-    <div class="form-group">
-        <label for="Contraseña">Contraseña</label>
-        <input asp-for="Contraseña" type="password" class="form-control" placeholder="Ingrese su contraseña" />
-        <span asp-validation-for="Contraseña" class="text-danger"></span>
-    </div>
-
-    <button type="submit" class="btn btn-primary">Iniciar sesión</button>
-
-    <div>
-        <a href="@Url.Action("Register", "Account")">¿No tienes cuenta? Regístrate aquí.</a>
-    </div>
-</form>
-
-@section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
-}
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

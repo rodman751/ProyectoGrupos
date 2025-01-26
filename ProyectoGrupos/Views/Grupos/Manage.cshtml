@@ -1,126 +1,315 @@
 ﻿@model GroupManagementViewModel
+<style>
+    .modern-form-container {
+        background: linear-gradient(135deg, #f6f8f9 0%, #e5ebee 100%);
+        border-radius: 12px;
+        padding: 30px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        max-width: 500px;
+        margin: 20px auto;
+        transition: all 0.3s ease;
+    }
 
-<div class="container mt-4">
-    <div class="row">
-        <div class="col-md-8 offset-md-2">
-            <div class="card">
-                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                    <h3 class="mb-0">Administración de Grupo: @Model.Group.Nombre</h3>
-                    <button type="button" class="btn btn-light" data-bs-toggle="modal" data-bs-target="#addMemberModal">
-                        <i class="fas fa-user-plus"></i> Añadir Integrante
-                    </button>
+        .modern-form-container:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+        }
 
+    .select2-container {
+        width: 100% !important;
+    }
 
-                </div>
-                <a href="@Url.Action("Index", "Grupos")" class="btn btn-secondary">
-                    Regresar al Índice
-                </a>
+    .select2-container--default .select2-selection--single {
+        height: 48px;
+        border-radius: 8px;
+        border: 1.5px solid #ced4da;
+    }
 
-                <div class="card-body">
-                    <div class="row mb-4">
-                        <div class="col-md-6">
-                            <strong>Descripción:</strong> @Model.Group.Descripcion
+    .modern-btn {
+        background: linear-gradient(to right, #4e73df 0%, #224abe 100%);
+        border: none;
+        color: white;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+        .modern-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(78,115,223,0.4);
+        }
+
+    .toggle-form-btn {
+        background: linear-gradient(to right, #17a673 0%, #16a085 100%);
+        margin-bottom: 20px;
+    }
+
+    .form-group label {
+        font-weight: 600;
+        color: #6e7881;
+        margin-bottom: 10px;
+    }
+</style>
+<div class="group-container">
+    <div class="group-header">
+        <h3 class="mb-0">Administración de Grupo: @Model.Group.Nombre</h3>
+        
+    </div>
+
+    <div class="card-body p-0">
+        @if (ViewBag.EsAdministrador == true)
+        {
+            <div class="container">
+                <button id="showFormButton" class="btn toggle-form-btn modern-btn m-3">
+                    <i class="fas fa-user-plus mr-2"></i>Añadir Integrante
+                </button>
+
+                <div id="addMemberFormContainer" class="modern-form-container" style="display:none;">
+                    <h3 class="mb-4 text-center" style="color: #4e73df;">Añadir Nuevo Integrante</h3>
+                    <form id="addMemberForm" asp-action="AddMember" method="post">
+                        <input type="hidden" name="grupoId" value="@Model.Group.IdGrupo" />
+                        <div class="form-group mb-4">
+                            <label for="memberEmail">Seleccionar o Escribir Correo Electrónico</label>
+                            <select class="form-control select2" id="memberEmail" name="email" required>
+                                <option value="">Seleccione o escriba un correo...</option>
+                                @* Aquí podrías popular opciones de usuarios existentes *@
+                            </select>
                         </div>
-                        <div class="col-md-6">
-                            <strong>Límite de Integrantes:</strong> @Model.Group.NumeroMaximoIntegrantes
+                        <div class="text-center">
+                            <button type="submit" class="btn modern-btn w-100">
+                                <i class="fas fa-plus-circle mr-2"></i>Añadir Integrante
+                            </button>
                         </div>
-                    </div>
-
-                    <h4 class="mb-3">Integrantes del Grupo</h4>
-                    @if (Model.GroupMembers.Any())
-                    {
-                        <div class="table-responsive">
-                            <table class="table table-striped">
-                                <thead>
-                                    <tr>
-                                        <th>Nombre</th>
-                                        <th>Email</th>
-                                        <th>Rol en Grupo</th>
-                                        <th>Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var member in Model.GroupMembers)
-                                    {
-                                        <tr>
-                                            <td>@member.Nombre</td>
-                                            <td>@member.Email</td>
-                                            <td>
-                                                @(member.EsAdministrador ? "Administrador" : "Miembro")
-                                            </td>
-                                            <td>
-                                                @if (!member.EsAdministrador)
-                                                {
-
-                                                    <form method="post" asp-action="ChangeAdmin" class="d-inline">
-                                                        <input type="hidden" name="grupoId" value="@Model.Group.IdGrupo" />
-                                                        <input type="hidden" name="userId" value="@member.IdUsuario" />
-
-                                                        <button type="submit" class="btn btn-sm btn-warning">
-                                                            Hacer Administrador
-                                                        </button>
-                                                    </form>
-                                                }
-                                                <form method="post" asp-action="RemoveMember" class="d-inline">
-                                                    <input type="hidden" name="grupoId" value="@Model.Group.IdGrupo" />
-                                                    <input type="hidden" name="userId" value="@member.IdUsuario" />
-
-                                                    <button type="submit" class="btn btn-sm btn-danger">
-                                                        Eliminar
-                                                    </button>
-                                                </form>
-
-                                            </td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-
-                            <form method="post" asp-action="EliminarGrupo" class="d-inline">
-                                <input type="hidden" name="id" value="@Model.Group.IdGrupo" />
-                                
-
-                                <button type="submit" class="btn btn-sm btn-danger">
-                                    Eliminar GRUPO
-                                </button>
-                            </form>
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="alert alert-info text-center">
-                            No hay integrantes en este grupo aún.
-                        </div>
-                    }
+                    </form>
                 </div>
             </div>
+        }
+
+        <div class="group-details">
+            <div class="detail-card">
+                <strong>Descripción:</strong> <span class="text-muted">@Model.Group.Descripcion</span>
+            </div>
+            <div class="detail-card">
+                <strong>Límite de Integrantes:</strong> <span class="text-muted">@Model.Group.NumeroMaximoIntegrantes</span>
+            </div>
+        </div>
+
+        <div class="group-members">
+            <h4 class="mb-3">Integrantes del Grupo</h4>
+            @if (Model.GroupMembers.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Email</th>
+                                <th>Rol en Grupo</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var member in Model.GroupMembers)
+                            {
+                                <tr>
+                                    <td>@member.Nombre</td>
+                                    <td>@member.Email</td>
+                                    <td>@(member.EsAdministrador ? "Administrador" : "Miembro")</td>
+                                    <td>
+                                        @if (User.IsInRole("Admin") || (User.IsInRole("Colaborador")))
+                                        {
+                                            @if (!member.EsAdministrador)
+                                            {
+                                                <!-- Si el miembro es administrador, puede eliminar y dar admin a otros -->
+
+
+                                                <button class="btn btn-sm btn-warning me-1" onclick="confirmAdminChange('@member.Nombre', @member.IdUsuario, @Model.Group.IdGrupo)">
+                                                    Hacer Administrador
+                                                </button>
+                                                <button class="btn btn-sm btn-danger" onclick="confirmRemoveMember('@member.Nombre', @member.IdUsuario, @Model.Group.IdGrupo)">
+                                                    Eliminar
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <button class="btn btn-sm btn-danger" onclick="confirmRemoveMember('@member.Nombre', @member.IdUsuario, @Model.Group.IdGrupo)">
+                                                    Eliminar
+                                                </button>
+                                                
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <!-- Si no es administrador, solo se muestra el mensaje de no tener permisos -->
+                                            <span class="text-muted">No tienes permisos para administrar este grupo</span>
+                                        }
+
+
+
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <div class="actions-bottom">
+                    <a href="@Url.Action("Index", "Grupos")" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Regresar al Índice
+                    </a>
+                    @if ((ViewBag.EsCreador ?? false))
+                    {
+                        <form id="deleteGroupForm" method="post" asp-action="EliminarGrupo" class="d-inline">
+                            <input type="hidden" name="id" value="@Model.Group.IdGrupo" />
+                            <button type="button" class="btn delete-btn text-black" onclick="confirmDeleteGroup()">
+                                Eliminar GRUPO
+                            </button>
+                        </form>
+
+                        
+                    }
+                    
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info text-center">
+                    No hay integrantes en este grupo aún.
+                </div>
+            }
         </div>
     </div>
 </div>
 
 
-<!-- Modal para Añadir Integrante -->
-<div class="modal fade" id="addMemberModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Añadir Integrante</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <form id="addMemberForm" asp-action="AddMember" method="post">
-                    <!-- Campo oculto para enviar el IdGrupo -->
-                    <input type="hidden" name="grupoId" value="@Model.Group.IdGrupo" />
 
-                    <div class="form-group">
-                        <label for="memberEmail">Correo Electrónico</label>
-                        <input type="email" class="form-control" id="memberEmail" name="email" required />
-                    </div>
 
-                    <button type="submit" class="btn btn-primary">Añadir</button>
-                </form>
 
-            </div>
-        </div>
-    </div>
-</div>
+@section Scripts{
+    
+   
+    <script>
+       
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const confirmAdminChange = (nombre, userId, groupId) => {
+                Swal.fire({
+                    title: `¿Hacer a ${nombre} administrador?`,
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonText: "Sí, cambiar",
+                    cancelButtonText: "Cancelar"
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        const form = document.createElement("form");
+                        form.method = "post";
+                        form.action = "/Grupos/ChangeAdmin";
+                        form.innerHTML = `
+                            <input type="hidden" name="grupoId" value="${groupId}" />
+                            <input type="hidden" name="userId" value="${userId}" />
+                        `;
+                        document.body.appendChild(form);
+                        form.submit();
+                    }
+                });
+            };
+
+            const confirmRemoveMember = (nombre, userId, groupId) => {
+                Swal.fire({
+                    title: `¿Eliminar a ${nombre} del grupo?`,
+                    text: "Esta acción no se puede deshacer",
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonText: "Sí, eliminar",
+                    cancelButtonText: "Cancelar"
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        const form = document.createElement("form");
+                        form.method = "post";
+                        form.action = "/Grupos/RemoveMember";
+                        form.innerHTML = `
+                            <input type="hidden" name="grupoId" value="${groupId}" />
+                            <input type="hidden" name="userId" value="${userId}" />
+                        `;
+                        document.body.appendChild(form);
+                        form.submit();
+                    }
+                });
+            };
+
+            const confirmDeleteGroup = () => {
+                Swal.fire({
+                    title: "¿Eliminar este grupo?",
+                    text: "Esta acción no se puede deshacer",
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonText: "Sí, eliminar",
+                    cancelButtonText: "Cancelar"
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        document.getElementById("deleteGroupForm").submit();
+                    }
+                });
+            };
+
+            // Exponer funciones al alcance global
+            window.confirmAdminChange = confirmAdminChange;
+            window.confirmRemoveMember = confirmRemoveMember;
+            window.confirmDeleteGroup = confirmDeleteGroup;
+        });
+        $(document).ready(function () {
+            // Inicializamos el select2
+            $('#memberEmail').select2({
+                placeholder: "Seleccione o escriba un correo...",
+                allowClear: true,
+                tags: true,
+                ajax: {
+                    url: '/Grupos/ObtenerCorreos', // Reemplaza con tu acción real
+                    dataType: 'json',
+                    delay: 250, // Retraso en milisegundos antes de la búsqueda
+                    data: function (params) {
+                        return {
+                            searchTerm: params.term // El texto que el usuario escribe
+                        };
+                    },
+                    processResults: function (data) {
+                        return {
+                            results: data.results // Devuelve los datos en el formato adecuado
+                        };
+                    },
+                    minimumInputLength: 1
+                },
+                language: {
+                    noResults: function () {
+                        return "No hay resultados"; // Mensaje cuando no se encuentran resultados
+                    },
+                },
+                createTag: function (params) {
+                    var term = $.trim(params.term); // El texto ingresado por el usuario
+                    if (term === '') {
+                        return null; // Si está vacío, no se crea ninguna nueva opción
+                    }
+                    return {
+                        id: term,
+                        text: term,
+                        newOption: true // Marcar como una nueva opción
+                    };
+                },
+                templateResult: function (data) {
+                    if (data.newOption) {
+                        return $('<span><em>' + data.text + '</em> (nuevo)</span>'); // Resalta las nuevas opciones
+                    }
+                    return data.text;
+                },
+                templateSelection: function (data) {
+                    return data.text; // Muestra solo el texto seleccionado
+                }
+            });
+
+            // Mostrar el formulario al hacer clic en el botón
+            $('#showFormButton').click(function () {
+                $('#addMemberFormContainer').toggle(); // Mostrar u ocultar el formulario
+            });
+        });
+    </script>
+}

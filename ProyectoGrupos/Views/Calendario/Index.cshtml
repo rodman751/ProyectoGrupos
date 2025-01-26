@@ -1,81 +1,58 @@
 ﻿@model CalendarViewModel
 
-<div class="container-fluid">
-    <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <h3>Calendario de @Model.GrupoNombre</h3>
-            @if (ViewBag.EsAdministrador)
-            {
-                <!-- Botón para abrir el modal de detalles del evento -->
-                <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#eventDetailsModal">
-                    Ver Detalles del Evento
+    <div class="container-fluid py-4">
+        <div class="calendar-container">
+            <div class="calendar-header">
+                <h3 class="mb-0">Calendario de @Model.GrupoNombre</h3>
+               
+            </div>
+        @if (ViewBag.EsAdministrador)
+        {
+            <a asp-controller="Actividades" asp-action="Index" asp-route-grupoId="@Model.GrupoId" class="btn btn-outline-primary m-2">
+                <i class="fas fa-plus-circle me-2"></i>Crear Actividad
+            </a>
+        }
+            <div class="calendar-navigation">
+                <button id="prevMonthBtn" class="btn btn-outline-secondary">
+                    <i class="fas fa-chevron-left me-2"></i>Mes Anterior
                 </button>
+                <button id="nextMonthBtn" class="btn btn-outline-secondary">
+                    Mes Siguiente<i class="fas fa-chevron-right ms-2"></i>
+                </button>
+            </div>
 
-            }
-        </div>
-        <button id="prevMonthBtn">Mes Anterior</button>
-        <button id="nextMonthBtn">Mes Siguiente</button>
-        <div class="card-body">
-            <div id="calendar" style="height: 600px;"></div>
+            <div id="calendar"></div>
         </div>
     </div>
-</div>
 
-<!-- Modal para Crear Evento -->
-<div class="modal fade" id="createEventModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Crear Nuevo Evento</h5>
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-            </div>
-            <form id="eventForm">
+    <!-- Modal para Detalles del Evento -->
+    <div class="modal fade" id="eventDetailsModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-light">
+                    <h5 class="modal-title" id="eventDetailsTitle"></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
                 <div class="modal-body">
-                    <div class="form-group">
-                        <label>Título</label>
-                        <input type="text" class="form-control" id="eventTitle" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Descripción</label>
-                        <textarea class="form-control" id="eventDescription"></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label>Fecha</label>
-                        <input type="date" class="form-control" id="eventDate" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Color</label>
-                        <select class="form-control" id="eventColor">
-                            <option value="#007bff">Azul</option>
-                            <option value="#28a745">Verde</option>
-                            <option value="#dc3545">Rojo</option>
-                            <option value="#ffc107">Amarillo</option>
-                        </select>
-                    </div>
+                    <p><strong>Descripción:</strong> <span id="eventDetailsDescription"></span></p>
+                    <p><strong>Fecha de Inicio:</strong> <span id="eventDetailsDate"></span></p>
+                    <p><strong>Fecha de Fin:</strong> <span id="eventDetailsEndDate"></span></p>
                 </div>
-                <div class="modal-footer">
-                    <button type="submit" class="btn btn-primary">Guardar Evento</button>
-                </div>
-            </form>
+                @if(User.IsInRole("Colaborador") || (User.IsInRole("Admin"))){
+                    <div class="modal-footer">
+                        <a id="editEventButton" class="btn btn-sm btn-warning">
+                            <i class="fas fa-edit me-2"></i>Editar
+                        </a>
+                        <a id="deleteEventButton" class="btn btn-sm btn-danger">
+                            <i class="fas fa-trash-alt me-2"></i>Eliminar
+                        </a>
+                    </div>
+                }
+                            
+            </div>
         </div>
     </div>
-</div>
 
-<!-- Modal para Detalles del Evento -->
-<div class="modal fade" id="eventDetailsModal" tabindex="-1" aria-labelledby="eventDetailsModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="eventDetailsTitle"></h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <p><strong>Descripción:</strong> <span id="eventDetailsDescription"></span></p>
-                <p><strong>Fecha:</strong> <span id="eventDetailsDate"></span></p>
-            </div>
-        </div>
-    </div>
-</div>
 
 
 @section Scripts {
@@ -101,6 +78,8 @@
                 if (eventEndDate < currentDate) {
                     event.color = '#d9534f'; // Color rojo para eventos pasados
                 }
+
+
             });
             console.log(events);
             const container = document.getElementById('calendar');
@@ -147,6 +126,74 @@
                     $('#eventDetailsCreationDate').text(`Fecha de creación: ${ecuadorCreationTime.toLocaleString()} (Hora Ecuador)`);
                 }
 
+                // Establecer las URLs para los botones de editar y eliminar
+                const editUrl = `/Actividades/Edit?id=${eventInfo.event.id}`;
+                const deleteUrl = `/Actividades/Delete?idActividad=${eventInfo.event.id}`;
+
+                // Asignar las URLs a los botones
+                $('#editEventButton').attr('href', editUrl);
+                $('#deleteEventButton').attr('href', deleteUrl);
+
+                // SweetAlert confirmation for delete
+                $('#deleteEventButton').on('click', function (e) {
+                    e.preventDefault();  // Prevenir el comportamiento por defecto del enlace
+
+                    // Ocultar el spinner antes de mostrar la alerta
+                    hideSpinner();
+
+                    Swal.fire({
+                        title: '¿Estás seguro?',
+                        text: "No podrás revertir esta acción",
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#d33',
+                        cancelButtonColor: '#3085d6',
+                        confirmButtonText: 'Sí, eliminar',
+                        cancelButtonText: 'Cancelar'
+                    }).then((result) => {
+                        // Si el usuario confirma la acción
+                        if (result.isConfirmed) {
+                            // Mostrar el spinner antes de redirigir
+                            showSpinner();
+                            // Redirigir a la URL de eliminación
+                            window.location.href = deleteUrl;
+                        } else {
+                            // Si el usuario cancela, ocultar el spinner
+                            hideSpinner();
+                        }
+                    });
+                });
+
+
+                $('#editEventButton').on('click', function (e) {
+                    e.preventDefault();  // Prevenir el comportamiento por defecto del enlace
+
+                    // Ocultar el spinner antes de mostrar la alerta
+                    hideSpinner();
+
+                    Swal.fire({
+                        title: '¿Estás seguro?',
+                        text: "No podrás revertir esta acción",
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#d33',
+                        cancelButtonColor: '#3085d6',
+                        confirmButtonText: 'Sí, Editar',
+                        cancelButtonText: 'Cancelar'
+                    }).then((result) => {
+                        // Si el usuario confirma la acción
+                        if (result.isConfirmed) {
+                            // Mostrar el spinner antes de redirigir
+                            showSpinner();
+                            // Redirigir a la URL de edición
+                            window.location.href = editUrl;
+                        } else {
+                            // Si el usuario cancela, ocultar el spinner
+                            hideSpinner();
+                        }
+                    });
+                });
+
                 // Show the modal with the updated details
                 $('#eventDetailsModal').modal('show');
             });
@@ -161,27 +208,7 @@
                 calendar.next();  // Cambia al mes siguiente
             });
 
-            // Event Creation Handling
-            // $('#eventForm').on('submit', function (e) {
-            //     e.preventDefault();
-            //     $.ajax({
-            //         url: '@Url.Action("CreateEvent", "Grupos")',
-            //         type: 'POST',
-            //         data: {
-            //             grupoId: @Model.GrupoId,
-            //             titulo: $('#eventTitle').val(),
-            //             descripcion: $('#eventDescription').val(),
-            //             fecha: $('#eventDate').val(),
-            //             color: $('#eventColor').val()
-            //         },
-            //         success: function (result) {
-            //             location.reload();
-            //         },
-            //         error: function () {
-            //             alert('Error al crear el evento');
-            //         }
-            //     });
-            // });
+       
 
 
 
