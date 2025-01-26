@@ -1,52 +1,55 @@
 ﻿@model CalendarViewModel
 
-<div class="container-fluid">
-    <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <h3>Calendario de @Model.GrupoNombre</h3>
-            @if (ViewBag.EsAdministrador)
-            {
-                <a asp-controller="Actividades" asp-action="Index" asp-route-grupoId="@Model.GrupoId" class="btn btn-sm btn-secondary">
-                    <i class="fas fa-cog"></i> Crear Actividad
-                </a>
-
-
-            }
-        </div>
-        <button id="prevMonthBtn">Mes Anterior</button>
-        <button id="nextMonthBtn">Mes Siguiente</button>
-        <div class="card-body">
-            <div id="calendar" style="height: 600px;"></div>
-        </div>
-    </div>
-</div>
-
-
-<!-- Modal para Detalles del Evento -->
-<div class="modal fade" id="eventDetailsModal" tabindex="-1" aria-labelledby="eventDetailsModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="eventDetailsTitle"></h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    <div class="container-fluid py-4">
+        <div class="calendar-container">
+            <div class="calendar-header">
+                <h3 class="mb-0">Calendario de @Model.GrupoNombre</h3>
+               
             </div>
-            <div class="modal-body">
-                <p><strong>Descripción:</strong> <span id="eventDetailsDescription"></span></p>
-                <p><strong>Fecha:</strong> <span id="eventDetailsDate"></span></p>
-            </div>
-            <div class="modal-footer">
-                <!-- Botones de edición y eliminación dinámicamente generados -->
-                <a id="editEventButton" class="btn btn-sm btn-secondary" href="#">
-                    <i class="fas fa-cog"></i> Editar Actividad
-                </a>
-                <a id="deleteEventButton" class="btn btn-sm btn-danger" href="#">
-                    <i class="fas fa-trash-alt"></i> Eliminar Actividad
-                </a>
+        @if (ViewBag.EsAdministrador)
+        {
+            <a asp-controller="Actividades" asp-action="Index" asp-route-grupoId="@Model.GrupoId" class="btn btn-outline-primary m-2">
+                <i class="fas fa-plus-circle me-2"></i>Crear Actividad
+            </a>
+        }
+            <div class="calendar-navigation">
+                <button id="prevMonthBtn" class="btn btn-outline-secondary">
+                    <i class="fas fa-chevron-left me-2"></i>Mes Anterior
+                </button>
+                <button id="nextMonthBtn" class="btn btn-outline-secondary">
+                    Mes Siguiente<i class="fas fa-chevron-right ms-2"></i>
+                </button>
             </div>
 
+            <div id="calendar"></div>
         </div>
     </div>
-</div>
+
+    <!-- Modal para Detalles del Evento -->
+    <div class="modal fade" id="eventDetailsModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-light">
+                    <h5 class="modal-title" id="eventDetailsTitle"></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p><strong>Descripción:</strong> <span id="eventDetailsDescription"></span></p>
+                    <p><strong>Fecha de Inicio:</strong> <span id="eventDetailsDate"></span></p>
+                    <p><strong>Fecha de Fin:</strong> <span id="eventDetailsEndDate"></span></p>
+                </div>
+                <div class="modal-footer">
+                    <a id="editEventButton" class="btn btn-sm btn-warning">
+                        <i class="fas fa-edit me-2"></i>Editar
+                    </a>
+                    <a id="deleteEventButton" class="btn btn-sm btn-danger">
+                        <i class="fas fa-trash-alt me-2"></i>Eliminar
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
 
 
 @section Scripts {
@@ -128,6 +131,42 @@
                 $('#editEventButton').attr('href', editUrl);
                 $('#deleteEventButton').attr('href', deleteUrl);
 
+                // SweetAlert confirmation for delete
+                $('#deleteEventButton').on('click', function (e) {
+                    e.preventDefault();
+                    Swal.fire({
+                        title: '¿Estás seguro?',
+                        text: "No podrás revertir esta acción",
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#d33',
+                        cancelButtonColor: '#3085d6',
+                        confirmButtonText: 'Sí, eliminar',
+                        cancelButtonText: 'Cancelar'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            window.location.href = deleteUrl;
+                        }
+                    });
+                });
+
+                $('#editEventButton').on('click', function (e) {
+                    e.preventDefault();
+                    Swal.fire({
+                        title: '¿Estás seguro?',
+                        text: "No podrás revertir esta acción",
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#d33',
+                        cancelButtonColor: '#3085d6',
+                        confirmButtonText: 'Sí, Editar',
+                        cancelButtonText: 'Cancelar'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            window.location.href = editUrl;
+                        }
+                    });
+                });
                 // Show the modal with the updated details
                 $('#eventDetailsModal').modal('show');
             });

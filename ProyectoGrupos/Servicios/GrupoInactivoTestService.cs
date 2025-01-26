@@ -26,7 +26,7 @@ namespace ProyectoGrupos.Servicios
                 }
 
                 // Ejecuta cada 2 minutos
-                await Task.Delay(TimeSpan.FromMinutes(2), stoppingToken);
+                await Task.Delay(TimeSpan.FromMinutes(10), stoppingToken);
             }
         }
     }

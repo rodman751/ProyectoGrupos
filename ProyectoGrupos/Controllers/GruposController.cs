@@ -17,21 +17,44 @@ namespace ProyectoGrupos.Controllers
 
         }
 
+        private async Task<int> GetUserId()
+        {
+            // Obtenemos el nombre de usuario del contexto del usuario autenticado
+            var username = User.Identity.Name;
+
+            if (string.IsNullOrEmpty(username))
+            {
+                throw new InvalidOperationException("El usuario no está autenticado.");
+            }
+
+            // Buscamos el usuario en la base de datos por el nombre de usuario
+            var usuario = await _context.Usuarios
+                .FirstOrDefaultAsync(u => u.Nombre == username);
+
+            if (usuario == null)
+            {
+                throw new InvalidOperationException("El usuario no existe en la base de datos.");
+            }
+
+            // Retornamos el Id del usuario
+            return usuario.IdUsuario;
+        }
         public async Task<IActionResult> Index()
         {
+            var userId = await GetUserId();
             var grupos = await _context.Grupos
-                .Select(g => new GrupoDTO
-                {
-                    IdGrupo = g.IdGrupo,
-                    Nombre = g.Nombre,
-                    Descripcion = g.Descripcion,
-                    NumeroMaximoIntegrantes = g.NumeroMaximoIntegrantes,
-                    NumeroActualIntegrantes = g.NumeroActualIntegrantes,
-                    FechaCreacion = g.FechaCreacion,
-                    Estado = g.Estado
-                })
-                .ToListAsync();
-
+           .Where(g => g.IdCreador == userId || g.GruposIntegrantes.Any(gi => gi.IdUsuario == userId))
+           .Select(g => new GrupoDTO
+           {
+               IdGrupo = g.IdGrupo,
+               Nombre = g.Nombre,
+               Descripcion = g.Descripcion,
+               NumeroMaximoIntegrantes = g.NumeroMaximoIntegrantes,
+               NumeroActualIntegrantes = g.NumeroActualIntegrantes,
+               FechaCreacion = g.FechaCreacion,
+               Estado = g.Estado
+           })
+           .ToListAsync();
             return View(grupos);
         }
 
@@ -147,7 +170,8 @@ namespace ProyectoGrupos.Controllers
                 NumeroMaximoIntegrantes = grupo.NumeroMaximoIntegrantes,
                 NumeroActualIntegrantes = 0,
                 IdCreador = usuario.IdUsuario,
-                FechaCreacion = DateTime.Now
+                FechaCreacion = DateTime.Now,
+                Estado = "Activo"
             };
 
             _context.Grupos.Add(nuevoGrupo);

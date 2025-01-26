@@ -1,103 +1,80 @@
 ﻿@model GroupManagementViewModel
 
-<div class="container mt-4">
-    <div class="row">
-        <div class="col-md-8 offset-md-2">
-            <div class="card">
-                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                    <h3 class="mb-0">Administración de Grupo: @Model.Group.Nombre</h3>
-                    <button type="button" class="btn btn-light" data-bs-toggle="modal" data-bs-target="#addMemberModal">
-                        <i class="fas fa-user-plus"></i> Añadir Integrante
-                    </button>
+<div class="group-container">
+    <div class="group-header">
+        <h3 class="mb-0">Administración de Grupo: @Model.Group.Nombre</h3>
+        <button type="button" class="btn btn-light mt-3" data-bs-toggle="modal" data-bs-target="#addMemberModal">
+            <i class="fas fa-user-plus"></i> Añadir Integrante
+        </button>
+    </div>
 
+    <div class="card-body p-0">
+       
 
-                </div>
-                <a href="@Url.Action("Index", "Grupos")" class="btn btn-secondary">
-                    Regresar al Índice
-                </a>
-
-                <div class="card-body">
-                    <div class="row mb-4">
-                        <div class="col-md-6">
-                            <strong>Descripción:</strong> @Model.Group.Descripcion
-                        </div>
-                        <div class="col-md-6">
-                            <strong>Límite de Integrantes:</strong> @Model.Group.NumeroMaximoIntegrantes
-                        </div>
-                    </div>
-
-                    <h4 class="mb-3">Integrantes del Grupo</h4>
-                    @if (Model.GroupMembers.Any())
-                    {
-                        <div class="table-responsive">
-                            <table class="table table-striped">
-                                <thead>
-                                    <tr>
-                                        <th>Nombre</th>
-                                        <th>Email</th>
-                                        <th>Rol en Grupo</th>
-                                        <th>Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var member in Model.GroupMembers)
-                                    {
-                                        <tr>
-                                            <td>@member.Nombre</td>
-                                            <td>@member.Email</td>
-                                            <td>
-                                                @(member.EsAdministrador ? "Administrador" : "Miembro")
-                                            </td>
-                                            <td>
-                                                @if (!member.EsAdministrador)
-                                                {
-
-                                                    <form method="post" asp-action="ChangeAdmin" class="d-inline">
-                                                        <input type="hidden" name="grupoId" value="@Model.Group.IdGrupo" />
-                                                        <input type="hidden" name="userId" value="@member.IdUsuario" />
-
-                                                        <button type="submit" class="btn btn-sm btn-warning">
-                                                            Hacer Administrador
-                                                        </button>
-                                                    </form>
-                                                }
-                                                <form method="post" asp-action="RemoveMember" class="d-inline">
-                                                    <input type="hidden" name="grupoId" value="@Model.Group.IdGrupo" />
-                                                    <input type="hidden" name="userId" value="@member.IdUsuario" />
-
-                                                    <button type="submit" class="btn btn-sm btn-danger">
-                                                        Eliminar
-                                                    </button>
-                                                </form>
-
-                                            </td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-
-                            <form method="post" asp-action="EliminarGrupo" class="d-inline">
-                                <input type="hidden" name="id" value="@Model.Group.IdGrupo" />
-                                
-
-                                <button type="submit" class="btn btn-sm btn-danger">
-                                    Eliminar GRUPO
-                                </button>
-                            </form>
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="alert alert-info text-center">
-                            No hay integrantes en este grupo aún.
-                        </div>
-                    }
-                </div>
+        <div class="group-details">
+            <div class="detail-card">
+                <strong>Descripción:</strong> <span class="text-muted">@Model.Group.Descripcion</span>
             </div>
+            <div class="detail-card">
+                <strong>Límite de Integrantes:</strong> <span class="text-muted">@Model.Group.NumeroMaximoIntegrantes</span>
+            </div>
+        </div>
+
+        <div class="group-members">
+            <h4 class="mb-3">Integrantes del Grupo</h4>
+            @if (Model.GroupMembers.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Email</th>
+                                <th>Rol en Grupo</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var member in Model.GroupMembers)
+                            {
+                                <tr>
+                                    <td>@member.Nombre</td>
+                                    <td>@member.Email</td>
+                                    <td>@(member.EsAdministrador ? "Administrador" : "Miembro")</td>
+                                    <td>
+                                        @if (!member.EsAdministrador)
+                                        {
+                                            <button class="btn btn-sm btn-warning me-1" onclick="confirmAdminChange('@member.Nombre', @member.IdUsuario, @Model.Group.IdGrupo)">
+                                                Hacer Administrador
+                                            </button>
+                                        }
+                                        <button class="btn btn-sm btn-danger" onclick="confirmRemoveMember('@member.Nombre', @member.IdUsuario, @Model.Group.IdGrupo)">
+                                            Eliminar
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <div class="actions-bottom">
+                    <a href="@Url.Action("Index", "Grupos")" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Regresar al Índice
+                    </a>
+                    <button type="button" class="btn delete-btn text-black" onclick="confirmDeleteGroup()">
+                        <i class="fas fa-trash-alt"></i> Eliminar Grupo
+                    </button>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info text-center">
+                    No hay integrantes en este grupo aún.
+                </div>
+            }
         </div>
     </div>
 </div>
-
 
 <!-- Modal para Añadir Integrante -->
 <div class="modal fade" id="addMemberModal" tabindex="-1">
@@ -109,18 +86,87 @@
             </div>
             <div class="modal-body">
                 <form id="addMemberForm" asp-action="AddMember" method="post">
-                    <!-- Campo oculto para enviar el IdGrupo -->
                     <input type="hidden" name="grupoId" value="@Model.Group.IdGrupo" />
-
                     <div class="form-group">
                         <label for="memberEmail">Correo Electrónico</label>
                         <input type="email" class="form-control" id="memberEmail" name="email" required />
                     </div>
-
-                    <button type="submit" class="btn btn-primary">Añadir</button>
+                    <button type="submit" class="btn btn-primary mt-3">Añadir</button>
                 </form>
-
             </div>
         </div>
     </div>
 </div>
+
+
+@section Scripts{
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const confirmAdminChange = (nombre, userId, groupId) => {
+                Swal.fire({
+                    title: `¿Hacer a ${nombre} administrador?`,
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonText: "Sí, cambiar",
+                    cancelButtonText: "Cancelar"
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        const form = document.createElement("form");
+                        form.method = "post";
+                        form.action = "/Grupos/ChangeAdmin";
+                        form.innerHTML = `
+                            <input type="hidden" name="grupoId" value="${groupId}" />
+                            <input type="hidden" name="userId" value="${userId}" />
+                        `;
+                        document.body.appendChild(form);
+                        form.submit();
+                    }
+                });
+            };
+
+            const confirmRemoveMember = (nombre, userId, groupId) => {
+                Swal.fire({
+                    title: `¿Eliminar a ${nombre} del grupo?`,
+                    text: "Esta acción no se puede deshacer",
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonText: "Sí, eliminar",
+                    cancelButtonText: "Cancelar"
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        const form = document.createElement("form");
+                        form.method = "post";
+                        form.action = "/Grupos/RemoveMember";
+                        form.innerHTML = `
+                            <input type="hidden" name="grupoId" value="${groupId}" />
+                            <input type="hidden" name="userId" value="${userId}" />
+                        `;
+                        document.body.appendChild(form);
+                        form.submit();
+                    }
+                });
+            };
+
+            const confirmDeleteGroup = () => {
+                Swal.fire({
+                    title: "¿Eliminar este grupo?",
+                    text: "Esta acción no se puede deshacer",
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonText: "Sí, eliminar",
+                    cancelButtonText: "Cancelar"
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        document.getElementById("deleteGroupForm").submit();
+                    }
+                });
+            };
+
+            // Exponer funciones al alcance global
+            window.confirmAdminChange = confirmAdminChange;
+            window.confirmRemoveMember = confirmRemoveMember;
+            window.confirmDeleteGroup = confirmDeleteGroup;
+        });
+
+    </script>
+}
