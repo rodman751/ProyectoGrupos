@@ -41,6 +41,19 @@ namespace ProyectoGrupos.Controllers
             // Retornamos el Id del usuario
             return usuario.IdUsuario;
         }
+        [HttpGet]
+        public IActionResult ObtenerCorreos(string searchTerm)
+        {
+            var correos = _context.Usuarios
+                .Where(u => string.IsNullOrEmpty(searchTerm) || u.Email.Contains(searchTerm))
+                .Select(u => new { id = u.Email, text = u.Email })
+                .Take(10) // Limitar a 10 resultados
+                .ToList();
+
+            return Json(new { results = correos });
+        }
+
+
         public async Task<IActionResult> Index()
         {
             var userId = await GetUserId();
