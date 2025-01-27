@@ -1,22 +1,120 @@
 ﻿@model IEnumerable<Entidades.Usuario>
-<table class="table">
-    <thead>
-        <tr>
-            <th>Id</th>
-            <th>Nombre</th>
-            <th>Email</th>
-            <th>Rol</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var usuario in Model)
-        {
-            <tr>
-                <td>@usuario.IdUsuario</td>
-                <td>@usuario.Nombre</td>
-                <td>@usuario.Email</td>
-                <td>@usuario.Rol</td>
-            </tr>
+
+<div class="role-management mb-5">
+    <h1 class="text-center mb-4">Gestión de Roles</h1>
+    <div class="card shadow-sm border-light">
+        <div class="card-body">
+            <h5 class="card-title text-primary mb-4">Roles Disponibles</h5>
+            <div class="row text-center">
+                <div class="col-md-4 mb-3">
+                    <div class="role-item p-4 border rounded shadow-sm">
+                        <i class="fas fa-user-shield fa-3x mb-3 text-primary"></i>
+                        <h6 class="h5">Administrador</h6>
+                        <p class="text-muted">Puede gestionar todos los grupos, actividades y usuarios.</p>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="role-item p-4 border rounded shadow-sm">
+                        <i class="fas fa-user-tie fa-3x mb-3 text-warning"></i>
+                        <h6 class="h5">Colaborador</h6>
+                        <p class="text-muted">Puede crear y gestionar sus propios grupos y actividades.</p>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="role-item p-4 border rounded shadow-sm">
+                        <i class="fas fa-user fa-3x mb-3 text-success"></i>
+                        <h6 class="h5">Usuario</h6>
+                        <p class="text-muted">Puede ver los grupos a los que ha sido añadido.</p>
+                    </div>
+                </div>
+            </div>
+            <!-- Botón para mostrar/ocultar tabla -->
+            <div class="text-center mt-4">
+                <button class="btn btn-primary" id="toggleTableBtn" onclick="toggleTable()">Cambiar Roles</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="user-management" id="userTable" style="display: none;">
+    <h1 class="text-center mb-4">Usuarios Registrados</h1>
+    <div class="table-responsive">
+        <table class="table table-hover table-bordered table-striped shadow-sm" id="dataTable">
+            <thead class="table-light">
+                <tr>
+                    <th>Nombre</th>
+                    <th>Email</th>
+                    <th>Rol</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var user in Model)
+                {
+                    <tr>
+                        <td>@user.Nombre</td>
+                        <td>@user.Email</td>
+                        <td>@user.Rol</td>
+                        <td>
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-secondary dropdown-toggle" type="button" id="roleDropdown-@user.IdUsuario" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Cambiar Rol
+                                </button>
+                                <ul class="dropdown-menu" aria-labelledby="roleDropdown-@user.IdUsuario">
+                                    <li><a class="dropdown-item" href="#" onclick="updateRole(@user.IdUsuario, 'Admin')">Administrador</a></li>
+                                    <li><a class="dropdown-item" href="#" onclick="updateRole(@user.IdUsuario, 'Colaborador')">Colaborador</a></li>
+                                    <li><a class="dropdown-item" href="#" onclick="updateRole(@user.IdUsuario, 'Usuario')">Usuario</a></li>
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts{
+    <script>
+
+        // Función para mostrar u ocultar la tabla de usuarios
+        function toggleTable() {
+            const table = document.getElementById("userTable");
+            const roles = document.querySelector(".role-management");
+            const button = document.getElementById("toggleTableBtn");
+
+            // Alternar visibilidad de la tabla y la sección de roles
+            if (table.style.display === "none") {
+                table.style.display = "block";
+                roles.style.display = "none"; // Ocultar los roles
+                button.textContent = "Volver a Roles Disponibles"; // Cambiar texto del botón
+            } else {
+                table.style.display = "none";
+                roles.style.display = "block"; // Mostrar roles nuevamente
+                button.textContent = "Cambiar Roles"; // Cambiar texto del botón
+            }
         }
-    </tbody>
-</table>
+
+        function updateRole(userId, newRole) {
+            $.ajax({
+                url: '/Usuarios/UpdateRole', // Reemplaza 'YourControllerName' con el nombre de tu controlador
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ userId: userId, newRole: newRole }), // Datos enviados al servidor
+                success: function () {
+                    alert('El rol del usuario se actualizó correctamente.');
+                    window.location.reload();
+                    // Aquí puedes actualizar la interfaz o realizar acciones adicionales
+                },
+                error: function (xhr) {
+                    if (xhr.status === 404) {
+                        alert('Usuario no encontrado.');
+                    } else {
+                        alert('Ocurrió un error al intentar actualizar el rol del usuario.');
+                    }
+                }
+            });
+        }
+
+    </script>
+}

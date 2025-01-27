@@ -2,10 +2,47 @@
     ViewData["Title"] = "Home Page";
 }
 
-
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="welcome-container">
+  <div class="welcome-message animate__animated animate__fadeInDown">
+    <h1 class="display-4 text-effect">Bienvenido, @User.Identity.Name!</h1>
+    <p class="lead text-effect">
+      Como @(User.IsInRole("Admin") ? "Admin" : (User.IsInRole("Colaborador") ? "Colaborador" : "Usuario")),
+      @(User.IsInRole("Admin") ? "puedes gestionar todos los grupos, actividades y acceder a reportes." :
+        (User.IsInRole("Colaborador") ? "puedes crear y gestionar tus propios grupos y actividades." :
+        "solo puedes ver los grupos a los que te han añadido."))
+    </p>
+  </div>
+  <div class="welcome-summary animate__animated animate__fadeInUp animate__delay-1s">
+    <h2 class="text-effect">¿Qué hay de nuevo?</h2>
+    <ul class="text-effect">
+      <li>Se añadió la funcionalidad de creación de nuevos grupos</li>
+      <li>Integración mejorada del calendario para una mejor planificación de eventos</li>
+      <li>Herramientas ampliadas para la gestión de actividades</li>
+    </ul>
+  </div>
+  <div class="welcome-cta animate__animated animate__bounceIn animate__delay-2s">
+    <a href="@Url.Action("Index","Grupos")" class="btn btn-primary btn-lg cta-button">Comenzar</a>
+  </div>
 </div>
 
+<
 
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const welcomeContainer = document.querySelector('.welcome-container');
+    welcomeContainer.classList.add('animate__animated', 'animate__fadeIn');
+
+    const ctaButton = document.querySelector('.cta-button');
+    ctaButton.addEventListener('mouseenter', () => {
+      ctaButton.classList.add('animate__animated', 'animate__pulse');
+    });
+    ctaButton.addEventListener('mouseleave', () => {
+      ctaButton.classList.remove('animate__animated', 'animate__pulse');
+    });
+
+    const textEffectElements = document.querySelectorAll('.text-effect');
+    textEffectElements.forEach((element) => {
+      element.classList.add('animate__animated', 'animate__fadeInUp');
+    });
+  });
+</script>

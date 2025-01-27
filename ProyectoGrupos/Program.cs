@@ -49,7 +49,7 @@ namespace ProyectoGrupos
 
             app.MapControllerRoute(
                 name: "default",
-                pattern: "{controller=Home}/{action=Index}/{id?}");
+                pattern: "{controller=Login}/{action=IniciarSesion}/{id?}");
 
             app.Run();
         }
