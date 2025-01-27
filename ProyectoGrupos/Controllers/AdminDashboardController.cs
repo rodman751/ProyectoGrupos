@@ -65,19 +65,9 @@ namespace ProyectoGrupos.Controllers
 
 
         // Table data views
-        public async Task<IActionResult> TableView(string tableName)
+        public async Task<IActionResult> Roles()
         {
-            dynamic tableData = tableName switch
-            {
-                "Usuarios" => await _context.Usuarios.ToListAsync(),
-                "Grupos" => await _context.Grupos.ToListAsync(),
-                "Actividades" => await _context.Actividades.ToListAsync(),
-                "GruposIntegrantes" => await _context.GruposIntegrantes.ToListAsync(),
-                _ => null
-            };
-
-            ViewBag.TableName = tableName;
-            return View(tableData);
+            return View(await _context.Usuarios.ToListAsync());
         }
     }
 }
